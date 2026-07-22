@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buscador de Vuelos · K0</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --asfalto:#1F2937; --ambar:#F59E0B; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Barlow',sans-serif; background:#111827; color:#F9FAFB; min-height:100vh; }
+  header { background:var(--asfalto); padding:24px 16px; text-align:center; border-bottom:4px solid var(--ambar); }
+  header h1 { font-family:'Barlow Condensed',sans-serif; font-size:2rem; letter-spacing:1px; text-transform:uppercase; }
+  header h1 span { color:var(--ambar); }
+  main { max-width:640px; margin:0 auto; padding:24px 16px; }
+  form { background:var(--asfalto); border-radius:12px; padding:20px; display:grid; gap:12px; }
+  label { font-size:.85rem; color:#9CA3AF; text-transform:uppercase; letter-spacing:.5px; }
+  input { width:100%; padding:12px; border-radius:8px; border:1px solid #374151; background:#111827; color:#F9FAFB; font-size:1.1rem; text-transform:uppercase; }
+  input[type=month] { text-transform:none; }
+  button { background:var(--ambar); color:#111827; font-family:'Barlow Condensed',sans-serif; font-size:1.3rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; border:none; border-radius:8px; padding:14px; cursor:pointer; }
+  button:active { transform:scale(.98); }
+  #estado { text-align:center; padding:20px; color:#9CA3AF; }
+  .vuelo { background:var(--asfalto); border-left:4px solid var(--ambar); border-radius:8px; padding:16px; margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  .vuelo .info { flex:1; min-width:180px; }
+  .vuelo .ruta { font-family:'Barlow Condensed',sans-serif; font-size:1.3rem; font-weight:700; }
+  .vuelo .detalle { font-size:.9rem; color:#9CA3AF; margin-top:4px; }
+  .vuelo .precio { font-family:'Barlow Condensed',sans-serif; font-size:2rem; font-weight:700; color:var(--ambar); }
+  .vuelo a { background:var(--ambar); color:#111827; text-decoration:none; font-weight:600; padding:10px 18px; border-radius:8px; font-family:'Barlow Condensed',sans-serif; font-size:1.1rem; text-transform:uppercase; }
+</style>
+</head>
+<body>
+<header><h1>Buscador de <span>Vuelos</span></h1></header>
+<main>
+  <form id="formulario">
+    <div>
+      <label>Origen (código IATA)</label>
+      <input id="origen" placeholder="MAD" maxlength="3" required>
+    </div>
+    <div>
+      <label>Destino (código IATA)</label>
+      <input id="destino" placeholder="CCS" maxlength="3" required>
+    </div>
+    <div>
+      <label>Mes del viaje</label>
+      <input id="fecha" type="month" required>
+    </div>
+    <button type="submit">Buscar</button>
+  </form>
+  <div id="estado"></div>
+  <div id="resultados"></div>
+</main>
+
+<script>
+const BACKEND = "https://buscadora-vuelos.onrender.com";
+const MARKER = "748938";   // <-- tu número de Travelpayouts
+
+const form = document.getElementById("formulario");
+const estado = document.getElementById("estado");
+const resultados = document.getElementById("resultados");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  resultados.innerHTML = "";
+  estado.textContent = "Buscando... (si el servidor estaba dormido puede tardar hasta un minuto)";
+
+  const origen = document.getElementById("origen").value.trim();
+  const destino = document.getElementById("destino").value.trim();
+  const fecha = document.getElementById("fecha").value;
+
+  try {
+    const r = await fetch(`${BACKEND}/buscar?origen=${origen}&destino=${destino}&fecha=${fecha}`);
+    if (!r.ok) throw new Error("Error del servidor");
+    const data = await r.json();
+    const vuelos = data.data || [];
+
+    if (vuelos.length === 0) {
+      estado.textContent = "Sin resultados para esa ruta y mes. Prueba otra fecha.";
+      return;
+    }
+
+    estado.textContent = `${vuelos.length} resultado(s) — precios por trayecto`;
+
+    vuelos.forEach(v => {
+      const horas = Math.floor(v.duration_to / 60);
+      const mins = v.duration_to % 60;
+      const escalas = v.transfers === 0 ? "Directo" : `${v.transfers} escala(s)`;
+      const dia = v.departure_at ? v.departure_at.slice(0,10) : "";
+      const enlace = `https://www.aviasales.es${v.link}&marker=${MARKER}`;
+
+      const div = document.createElement("div");
+      div.className = "vuelo";
+      div.innerHTML = `
+        <div class="info">
+          <div class="ruta">${v.origin} → ${v.destination}</div>
+          <div class="detalle">${dia} · ${v.airline} · ${horas}h ${mins}min · ${escalas}</div>
+        </div>
+        <div class="precio">${v.price}€</div>
+        <a href="${enlace}" target="_blank" rel="noopener">Reservar</a>`;
+      resultados.appendChild(div);
+    });
+  } catch (err) {
+    estado.textContent = "Error al buscar. Reintenta en unos segundos.";
+  }
+});
+</script>
+</body>
+</html>
