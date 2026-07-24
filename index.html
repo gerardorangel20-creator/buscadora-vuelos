@@ -458,6 +458,13 @@
 <script>
 const BACKEND = "https://buscadora-vuelos.onrender.com";
 const MARKER = "748938";
+const TRS = "548440";        /* proyecto VuelosGerardo */
+
+/* Envuelve una ruta de Aviasales en un enlace tp.media que SÍ registra clics */
+function enlaceAfiliado(rutaAviasales) {
+  const destino = `https://www.aviasales.es${rutaAviasales}`;
+  return `https://tp.media/r?marker=${MARKER}&trs=${TRS}&p=4114&campaign_id=100&u=${encodeURIComponent(destino)}`;
+}
 
 /* ---------- Aeropuertos: ciudad, país, IATA ---------- */
 const AEROPUERTOS = [
@@ -675,7 +682,7 @@ function pintarCalendario(datos, mes) {
     const d = Number(clave.slice(8,10));
     const directo = v.transfers === 0;
     const escalas = directo ? "Directo" : `${v.transfers} escala(s)`;
-    const enlace = `https://www.aviasales.es${v.link}&marker=${MARKER}`;
+    const enlace = enlaceAfiliado(v.link);
     panelDia.className = "dia-elegido";
     panelDia.innerHTML = `
       <div class="dato">
@@ -694,7 +701,7 @@ function pintarCalendario(datos, mes) {
     if (inVuelta.value && inVuelta.value < clave) inVuelta.value = clave;
     const d = Number(clave.slice(8,10));
     const dd = clave.slice(8,10), mm = clave.slice(5,7);
-    const enlace = `https://www.aviasales.es/search/${seleccion.origen}${dd}${mm}${seleccion.destino}1?marker=${MARKER}`;
+    const enlace = enlaceAfiliado(`/search/${seleccion.origen}${dd}${mm}${seleccion.destino}1`);
     panelDia.className = "dia-elegido";
     panelDia.innerHTML = `
       <div class="dato">
@@ -815,7 +822,7 @@ document.getElementById("buscar").addEventListener("click", async () => {
       const lineaVuelta = diaVuelta
         ? `<div class="detalle">🔁 Vuelta: ${diaVuelta}${v.return_transfers === 0 ? " · directo" : ` · ${v.return_transfers} escala(s)`}</div>`
         : "";
-      const enlace = `https://www.aviasales.es${v.link}&marker=${MARKER}`;
+      const enlace = enlaceAfiliado(v.link);
 
       const div = document.createElement("div");
       div.className = "vuelo";
@@ -876,7 +883,7 @@ function nombreCiudad(iata) {
     const ddmm  = f => `${f.slice(8,10)}${f.slice(5,7)}`;
 
     lista.forEach(v => {
-      const enlace = `https://www.aviasales.es/search/${v.origin}${ddmm(v.departure_at)}${v.destination}${ddmm(v.return_at)}1?marker=${MARKER}`;
+      const enlace = enlaceAfiliado(`/search/${v.origin}${ddmm(v.departure_at)}${v.destination}${ddmm(v.return_at)}1`);
       const tarjeta = document.createElement("div");
       tarjeta.className = "chollo";
       tarjeta.innerHTML = `
