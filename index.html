@@ -87,7 +87,7 @@
     color:var(--apagado); letter-spacing:1.5px; text-transform:uppercase;
     margin-bottom:8px;
   }
-  input[type=text] {
+  input[type=text], input[type=date] {
     width:100%; padding:15px 18px;
     border-radius:16px; border:1.5px solid var(--borde);
     background:var(--horizonte); color:var(--tinta);
@@ -95,7 +95,12 @@
     transition:border-color .2s;
   }
   input[type=text]::placeholder { color:#9DBBD1; }
-  input[type=text]:focus { outline:none; border-color:var(--turquesa); }
+  input[type=text]:focus, input[type=date]:focus { outline:none; border-color:var(--turquesa); }
+  .fechas { display:flex; gap:10px; }
+  .fechas > div { flex:1; min-width:0; }
+  .aviso-flexible {
+    font-size:.85rem; color:var(--apagado); margin-top:8px;
+  }
 
   /* Botón de intercambio origen/destino */
   .intercambio { display:flex; justify-content:center; margin:-6px 0 10px; }
@@ -336,13 +341,12 @@
     </div>
 
     <div class="campo">
-      <label>¿En qué mes sales?</label>
-      <div class="meses" id="meses"></div>
-    </div>
-
-    <div class="campo">
-      <label>¿En qué mes vuelves?</label>
-      <div class="meses" id="meses-regreso"></div>
+      <label>¿Qué días viajas?</label>
+      <div class="fechas">
+        <div><input type="date" id="fecha-ida" aria-label="Día de ida"></div>
+        <div><input type="date" id="fecha-vuelta" aria-label="Día de vuelta"></div>
+      </div>
+      <div class="aviso-flexible">Ida y vuelta. Si ese día exacto no tiene precio guardado, te enseñamos lo más barato de ese mes.</div>
     </div>
 
     <button class="boton-buscar" id="buscar">Buscar vuelos</button>
@@ -529,32 +533,22 @@ document.querySelectorAll(".destino").forEach(tarjeta => {
   });
 });
 
-/* ---------- Pastillas de meses (los próximos 12) ---------- */
+/* ---------- Fechas de ida y vuelta ---------- */
 const NOMBRES_MES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-let mesElegido = null;
-let mesRegreso = null;
+const inIda = document.getElementById("fecha-ida");
+const inVuelta = document.getElementById("fecha-vuelta");
 
-function montarMeses(idCont, alElegir) {
-  const cont = document.getElementById(idCont);
-  const hoy = new Date();
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(hoy.getFullYear(), hoy.getMonth() + i, 1);
-    const valor = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const pastilla = document.createElement("button");
-    pastilla.type = "button";
-    pastilla.className = "mes";
-    pastilla.textContent = `${NOMBRES_MES[d.getMonth()]} ${d.getFullYear()}`;
-    pastilla.addEventListener("click", () => {
-      cont.querySelectorAll(".mes").forEach(m => m.classList.remove("elegido"));
-      pastilla.classList.add("elegido");
-      alElegir(valor);
-    });
-    cont.appendChild(pastilla);
-  }
-}
+(function prepararFechas() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  inIda.min = hoy;
+  inVuelta.min = hoy;
 
-montarMeses("meses", v => { mesElegido = v; });
-montarMeses("meses-regreso", v => { mesRegreso = v; });
+  /* La vuelta nunca puede ser antes de la ida */
+  inIda.addEventListener("change", () => {
+    inVuelta.min = inIda.value || hoy;
+    if (inVuelta.value && inVuelta.value < inIda.value) inVuelta.value = inIda.value;
+  });
+})();
 
 /* ---------- Búsqueda ---------- */
 const estado = document.getElementById("estado");
@@ -595,6 +589,9 @@ function pintarCalendario(datos, mes) {
   function elegirDia(clave, barra) {
     zona.querySelectorAll(".barra").forEach(b => b.classList.remove("seleccionada"));
     barra.classList.add("seleccionada");
+    inIda.value = clave;                     /* lo pasamos al formulario */
+    inVuelta.min = clave;
+    if (inVuelta.value && inVuelta.value < clave) inVuelta.value = clave;
     const v = datos[clave];
     const d = Number(clave.slice(8,10));
     const directo = v.transfers === 0;
@@ -613,6 +610,9 @@ function pintarCalendario(datos, mes) {
   function elegirDiaSinDato(clave, barra) {
     zona.querySelectorAll(".barra").forEach(b => b.classList.remove("seleccionada"));
     barra.classList.add("seleccionada");
+    inIda.value = clave;
+    inVuelta.min = clave;
+    if (inVuelta.value && inVuelta.value < clave) inVuelta.value = clave;
     const d = Number(clave.slice(8,10));
     const dd = clave.slice(8,10), mm = clave.slice(5,7);
     const enlace = `https://www.aviasales.es/search/${seleccion.origen}${dd}${mm}${seleccion.destino}1?marker=${MARKER}`;
@@ -660,14 +660,19 @@ document.getElementById("buscar").addEventListener("click", async () => {
 
   if (!seleccion.origen) { estado.textContent = "Elige el origen de la lista de sugerencias 👆"; return; }
   if (!seleccion.destino) { estado.textContent = "Elige el destino de la lista de sugerencias 👆"; return; }
-  if (!mesElegido) { estado.textContent = "Toca el mes en el que sales 👆"; return; }
-  if (!mesRegreso) { estado.textContent = "Toca también el mes en el que vuelves 👆"; return; }
+  const diaIda = inIda.value;
+  const diaVuelta = inVuelta.value;
+  if (!diaIda)    { estado.textContent = "Elige el día de ida en el calendario 👆"; return; }
+  if (!diaVuelta) { estado.textContent = "Elige también el día de vuelta 👆"; return; }
+
+  const mesElegido = diaIda.slice(0, 7);
+  const mesRegreso = diaVuelta.slice(0, 7);
 
   estado.textContent = "Buscando... ✈️ (la primera búsqueda del día puede tardar hasta un minuto)";
 
   try {
     const [r, rCal] = await Promise.all([
-      fetch(`${BACKEND}/buscar?origen=${seleccion.origen}&destino=${seleccion.destino}&fecha=${mesElegido}&regreso=${mesRegreso}`),
+      fetch(`${BACKEND}/buscar?origen=${seleccion.origen}&destino=${seleccion.destino}&fecha=${diaIda}&regreso=${diaVuelta}`),
       fetch(`${BACKEND}/calendario?origen=${seleccion.origen}&destino=${seleccion.destino}&fecha=${mesElegido}`)
     ]);
     if (!r.ok) throw new Error("Error del servidor");
@@ -676,15 +681,27 @@ document.getElementById("buscar").addEventListener("click", async () => {
     let esIdaVuelta = true;
     let aviso = "";
 
-    /* Red de seguridad: si no hay ida y vuelta guardada, enseñamos la ida */
+    /* Red 1: esos días exactos no tienen precio → probamos esos mismos meses */
     if (vuelos.length === 0) {
-      const r2 = await fetch(`${BACKEND}/buscar?origen=${seleccion.origen}&destino=${seleccion.destino}&fecha=${mesElegido}`);
+      const r2 = await fetch(`${BACKEND}/buscar?origen=${seleccion.origen}&destino=${seleccion.destino}&fecha=${mesElegido}&regreso=${mesRegreso}`);
       if (r2.ok) {
         const data2 = await r2.json();
         vuelos = (data2.data || []).sort((a, b) => a.price - b.price);
         if (vuelos.length > 0) {
+          aviso = "Esos días exactos no tienen precio guardado. Te enseñamos las mejores idas y vueltas de esos meses.<br>";
+        }
+      }
+    }
+
+    /* Red 2: tampoco hay ida y vuelta → enseñamos la ida */
+    if (vuelos.length === 0) {
+      const r3 = await fetch(`${BACKEND}/buscar?origen=${seleccion.origen}&destino=${seleccion.destino}&fecha=${mesElegido}`);
+      if (r3.ok) {
+        const data3 = await r3.json();
+        vuelos = (data3.data || []).sort((a, b) => a.price - b.price);
+        if (vuelos.length > 0) {
           esIdaVuelta = false;
-          aviso = "No hay precios de ida y vuelta guardados para esos meses. Te mostramos los de ida — al pulsar Reservar puedes añadir la vuelta en Aviasales.<br>";
+          aviso = "No hay precios de ida y vuelta guardados para esas fechas. Te mostramos los de ida — al pulsar Reservar puedes añadir la vuelta en Aviasales.<br>";
         }
       }
     }
