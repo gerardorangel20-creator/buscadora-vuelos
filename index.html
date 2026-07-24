@@ -293,6 +293,35 @@
 
   /* ---------- Destinos populares ---------- */
   .destinos { margin-top:28px; }
+  /* ---------- Chollos de hoy ---------- */
+  .chollos { margin-top:28px; display:none; }
+  .chollos h2 {
+    font-family:'Bricolage Grotesque',sans-serif; font-weight:600;
+    font-size:1.3rem; text-align:center; margin-bottom:4px;
+  }
+  .chollos .subtitulo {
+    text-align:center; font-size:.85rem; color:var(--apagado); margin-bottom:14px;
+  }
+  .rejilla-chollos {
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;
+  }
+  @media (max-width:560px) { .rejilla-chollos { grid-template-columns:repeat(2, 1fr); } }
+  .chollo {
+    background:var(--nube); border:1px solid var(--borde); border-radius:18px;
+    padding:14px; display:flex; flex-direction:column; gap:3px;
+    box-shadow:0 8px 20px rgba(11,57,84,.08);
+  }
+  .chollo .ciudad { font-weight:700; font-size:1.02rem; }
+  .chollo .cuando { font-size:.76rem; color:var(--apagado); }
+  .chollo .precio-ch {
+    font-family:'Bricolage Grotesque',sans-serif; font-weight:700;
+    font-size:1.35rem; color:var(--turquesa); margin-top:4px;
+  }
+  .chollo a {
+    margin-top:8px; text-align:center; background:var(--coral); color:#fff;
+    text-decoration:none; font-weight:700; font-size:.85rem;
+    padding:8px 10px; border-radius:11px;
+  }
   .destinos h2 {
     font-family:'Bricolage Grotesque',sans-serif; font-weight:600;
     font-size:1.3rem; text-align:center; margin-bottom:14px;
@@ -385,6 +414,12 @@
   <div id="estado"></div>
   <div id="calendario"></div>
   <div id="resultados"></div>
+
+  <div class="chollos" id="chollos">
+    <h2>🔥 Chollos de hoy desde Madrid</h2>
+    <div class="subtitulo">Ida y vuelta, precios detectados en las últimas horas</div>
+    <div class="rejilla-chollos" id="rejilla-chollos"></div>
+  </div>
 
   <div class="destinos">
     <h2>🌍 Destinos que enamoran</h2>
@@ -800,6 +835,62 @@ document.getElementById("buscar").addEventListener("click", async () => {
     estado.textContent = "No pudimos completar la búsqueda. Espera unos segundos y reintenta.";
   }
 });
+
+/* ---------- Chollos de hoy (se cargan solos al entrar) ---------- */
+const CIUDADES = {
+  MOW:"Moscú", BCN:"Barcelona", ROM:"Roma", PAR:"París", LED:"San Petersburgo",
+  TCI:"Tenerife", AMS:"Ámsterdam", IST:"Estambul", LON:"Londres", IBZ:"Ibiza",
+  DUS:"Düsseldorf", BUH:"Bucarest", LPA:"Las Palmas", PMI:"Mallorca", TIA:"Tirana",
+  BER:"Berlín", BUD:"Budapest", MIL:"Milán", BKK:"Bangkok", VCE:"Venecia",
+  OPO:"Oporto", LIS:"Lisboa", SOF:"Sofía", PRG:"Praga", VIE:"Viena", DUB:"Dublín",
+  BRU:"Bruselas", CPH:"Copenhague", ATH:"Atenas", NAP:"Nápoles", FCO:"Roma",
+  MXP:"Milán", CDG:"París", ORY:"París", NYC:"Nueva York", JFK:"Nueva York",
+  MIA:"Miami", BOG:"Bogotá", CCS:"Caracas", SCL:"Santiago de Chile", EZE:"Buenos Aires",
+  LIM:"Lima", MEX:"Ciudad de México", GRU:"São Paulo", PTY:"Panamá", SDQ:"Santo Domingo",
+  HAV:"La Habana", PUJ:"Punta Cana", CUN:"Cancún", UIO:"Quito", GYE:"Guayaquil",
+  MVD:"Montevideo", ASU:"Asunción", LPB:"La Paz", SJO:"San José", CMN:"Casablanca",
+  RAK:"Marrakech", AGP:"Málaga", SVQ:"Sevilla", VLC:"Valencia", BIO:"Bilbao"
+};
+
+function nombreCiudad(iata) {
+  if (CIUDADES[iata]) return CIUDADES[iata];
+  const enLista = AEROPUERTOS.find(a => a[2] === iata);
+  return enLista ? enLista[0] : iata;
+}
+
+(async function cargarChollos() {
+  const seccion = document.getElementById("chollos");
+  const rejilla = document.getElementById("rejilla-chollos");
+  try {
+    const r = await fetch(`${BACKEND}/chollos?origen=MAD`);
+    if (!r.ok) return;
+    const datos = await r.json();
+    const lista = Object.values(datos.data || {})
+      .filter(v => v.price && v.departure_at && v.return_at)
+      .sort((a, b) => a.price - b.price)
+      .slice(0, 6);
+    if (lista.length === 0) return;
+
+    const DIAS_MES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+    const bonito = f => `${f.slice(8,10)} ${DIAS_MES[Number(f.slice(5,7)) - 1]}`;
+    const ddmm  = f => `${f.slice(8,10)}${f.slice(5,7)}`;
+
+    lista.forEach(v => {
+      const enlace = `https://www.aviasales.es/search/${v.origin}${ddmm(v.departure_at)}${v.destination}${ddmm(v.return_at)}1?marker=${MARKER}`;
+      const tarjeta = document.createElement("div");
+      tarjeta.className = "chollo";
+      tarjeta.innerHTML = `
+        <div class="ciudad">${nombreCiudad(v.destination)}</div>
+        <div class="cuando">${bonito(v.departure_at)} → ${bonito(v.return_at)}</div>
+        <div class="cuando">${v.transfers === 0 ? "Directo" : v.transfers + " escala(s)"}</div>
+        <div class="precio-ch">${v.price}€</div>
+        <a href="${enlace}" target="_blank" rel="noopener">Ver vuelo</a>`;
+      rejilla.appendChild(tarjeta);
+    });
+
+    seccion.style.display = "block";
+  } catch (e) { /* si falla, la sección simplemente no aparece */ }
+})();
 </script>
 </body>
 </html>
