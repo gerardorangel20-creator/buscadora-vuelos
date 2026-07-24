@@ -19,7 +19,7 @@ def salud():
     return {"estado": "ok"}
 
 @app.get("/buscar")
-async def buscar(origen: str, destino: str, fecha: str):
+async def buscar(origen: str, destino: str, fecha: str, regreso: str = None):
     if not TOKEN:
         raise HTTPException(500, "Token no configurado")
 
@@ -34,6 +34,13 @@ async def buscar(origen: str, destino: str, fecha: str):
         "token": TOKEN,
     }
 
+    # Si viene mes de regreso, pedimos ida y vuelta; si no, solo ida
+    if regreso:
+        params["return_at"] = regreso
+        params["one_way"] = "false"
+    else:
+        params["one_way"] = "true"
+
     async with httpx.AsyncClient() as client:
         r = await client.get(url, params=params, timeout=20)
 
@@ -43,7 +50,7 @@ async def buscar(origen: str, destino: str, fecha: str):
     return r.json()
 
 @app.get("/calendario")
-async def calendario(origen: str, destino: str, fecha: str):
+async def calendario(origen: str, destino: str, fecha: str, regreso: str = None):
     """Precio más barato por cada día del mes (para el gráfico de barras)."""
     if not TOKEN:
         raise HTTPException(500, "Token no configurado")
@@ -57,6 +64,9 @@ async def calendario(origen: str, destino: str, fecha: str):
         "currency": "eur",
         "token": TOKEN,
     }
+
+    if regreso:
+        params["return_at"] = regreso
 
     async with httpx.AsyncClient() as client:
         r = await client.get(url, params=params, timeout=20)
