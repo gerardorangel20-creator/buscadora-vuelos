@@ -75,3 +75,24 @@ async def calendario(origen: str, destino: str, fecha: str, regreso: str = None)
         raise HTTPException(502, "Error consultando Travelpayouts")
 
     return r.json()
+
+@app.get("/chollos")
+async def chollos(origen: str = "MAD"):
+    """Vuelos más baratos que salen de una ciudad hacia cualquier destino."""
+    if not TOKEN:
+        raise HTTPException(500, "Token no configurado")
+
+    url = "https://api.travelpayouts.com/v1/city-directions"
+    params = {
+        "origin": origen.upper(),
+        "currency": "eur",
+        "token": TOKEN,
+    }
+
+    async with httpx.AsyncClient() as client:
+        r = await client.get(url, params=params, timeout=20)
+
+    if r.status_code != 200:
+        raise HTTPException(502, "Error consultando Travelpayouts")
+
+    return r.json()
