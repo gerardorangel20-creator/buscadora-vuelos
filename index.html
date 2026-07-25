@@ -822,7 +822,24 @@ document.getElementById("buscar").addEventListener("click", async () => {
     } catch (e) { /* sin gráfico, sin drama */ }
 
     if (vuelos.length === 0) {
-      estado.textContent = "No encontramos precios para esa ruta y mes. Prueba otro mes u otra ciudad cercana.";
+      /* No hay precio guardado, pero mandamos al cliente a la búsqueda en vivo */
+      const ddI = diaIda.slice(8,10), mmI = diaIda.slice(5,7);
+      let ruta = `/search/${seleccion.origen}${ddI}${mmI}${seleccion.destino}`;
+      if (!soloIda && diaVuelta) {
+        ruta += `${diaVuelta.slice(8,10)}${diaVuelta.slice(5,7)}`;
+      }
+      ruta += "1";
+      const enlaceVivo = enlaceAfiliado(ruta);
+      estado.innerHTML = "No tenemos un precio guardado para esas fechas, pero puedes ver los vuelos disponibles en tiempo real 👇";
+      const caja = document.createElement("div");
+      caja.className = "vuelo";
+      caja.innerHTML = `
+        <div class="info">
+          <div class="trayecto">${seleccion.origen} <span class="flecha">${soloIda ? "✈" : "⇄"}</span> ${seleccion.destino}</div>
+          <div class="detalle">Consulta precios actualizados directamente en Aviasales</div>
+        </div>
+        <a class="reservar" href="${enlaceVivo}" target="_blank" rel="noopener">Ver vuelos en vivo</a>`;
+      resultados.appendChild(caja);
       return;
     }
 
