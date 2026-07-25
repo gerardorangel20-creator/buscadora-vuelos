@@ -129,6 +129,16 @@
   }
   /* Selector solo ida / ida y vuelta */
   .tipo-viaje { display:flex; gap:8px; margin-bottom:14px; }
+  /* Filtro de escalas sobre los resultados */
+  .filtro-escalas { display:flex; gap:8px; margin:4px 0 14px; }
+  .fesc {
+    flex:1; padding:9px 8px; border-radius:12px;
+    border:1.5px solid var(--borde); background:var(--nube);
+    color:var(--tinta); font-family:'Outfit',sans-serif; font-size:.88rem;
+    cursor:pointer; transition:all .15s;
+  }
+  .fesc:hover { border-color:var(--turquesa); }
+  .fesc.activo { background:var(--turquesa); border-color:var(--turquesa); color:#fff; font-weight:700; }
   .tipo {
     flex:1; padding:11px 8px; border-radius:14px;
     border:1.5px solid var(--borde); background:var(--horizonte);
@@ -846,34 +856,68 @@ document.getElementById("buscar").addEventListener("click", async () => {
       return;
     }
 
-    estado.innerHTML = aviso + `${vuelos.length} vuelo(s) encontrados — precio ${esIdaVuelta ? "de ida y vuelta" : "solo ida"}`;
+    /* Guardamos los vuelos y pintamos con el filtro activo */
+    const cuenta = { directo: vuelos.filter(v => v.transfers === 0).length,
+                     escala: vuelos.filter(v => v.transfers > 0).length };
 
-    vuelos.forEach(v => {
-      const horas = Math.floor(v.duration_to / 60);
-      const mins = v.duration_to % 60;
-      const directo = v.transfers === 0;
-      const escalas = directo ? "" : ` · ${v.transfers} escala(s)`;
-      const dia = v.departure_at ? v.departure_at.slice(0, 10) : "";
-      const diaVuelta = v.return_at ? v.return_at.slice(0, 10) : "";
-      const lineaVuelta = diaVuelta
-        ? `<div class="detalle">🔁 Vuelta: ${diaVuelta}${v.return_transfers === 0 ? " · directo" : ` · ${v.return_transfers} escala(s)`}</div>`
-        : "";
-      const enlace = enlaceAfiliado(v.link);
+    function pintarVuelos(filtro) {
+      resultados.innerHTML = "";
+      let lista = vuelos;
+      if (filtro === "directo") lista = vuelos.filter(v => v.transfers === 0);
+      if (filtro === "escala")  lista = vuelos.filter(v => v.transfers > 0);
 
-      const div = document.createElement("div");
-      div.className = "vuelo";
-      div.innerHTML = `
-        <div class="info">
-          <div class="trayecto">${v.origin} <span class="flecha">${diaVuelta ? "⇄" : "✈"}</span> ${v.destination}
-            ${directo ? '<span class="etiqueta-directo">Directo</span>' : ''}
+      /* Barra de filtro (solo si hay variedad que filtrar) */
+      const barra = document.createElement("div");
+      barra.className = "filtro-escalas";
+      barra.innerHTML = `
+        <button type="button" class="fesc ${filtro==='todos'?'activo':''}" data-f="todos">Todos (${vuelos.length})</button>
+        <button type="button" class="fesc ${filtro==='directo'?'activo':''}" data-f="directo">Directo (${cuenta.directo})</button>
+        <button type="button" class="fesc ${filtro==='escala'?'activo':''}" data-f="escala">Con escala (${cuenta.escala})</button>`;
+      barra.querySelectorAll(".fesc").forEach(b =>
+        b.addEventListener("click", () => pintarVuelos(b.dataset.f)));
+      resultados.appendChild(barra);
+
+      if (lista.length === 0) {
+        const vacio = document.createElement("div");
+        vacio.className = "detalle";
+        vacio.style.cssText = "text-align:center;color:var(--apagado);padding:14px";
+        vacio.textContent = filtro === "directo"
+          ? "No hay vuelos directos guardados para esta ruta. Prueba \"Todos\" para ver las opciones con escala."
+          : "No hay vuelos con escala para mostrar. Prueba \"Todos\".";
+        resultados.appendChild(vacio);
+        return;
+      }
+
+      lista.forEach(v => {
+        const horas = Math.floor(v.duration_to / 60);
+        const mins = v.duration_to % 60;
+        const directo = v.transfers === 0;
+        const escalas = directo ? "" : ` · ${v.transfers} escala(s)`;
+        const dia = v.departure_at ? v.departure_at.slice(0, 10) : "";
+        const diaVuelta = v.return_at ? v.return_at.slice(0, 10) : "";
+        const lineaVuelta = diaVuelta
+          ? `<div class="detalle">🔁 Vuelta: ${diaVuelta}${v.return_transfers === 0 ? " · directo" : ` · ${v.return_transfers} escala(s)`}</div>`
+          : "";
+        const enlace = enlaceAfiliado(v.link);
+
+        const div = document.createElement("div");
+        div.className = "vuelo";
+        div.innerHTML = `
+          <div class="info">
+            <div class="trayecto">${v.origin} <span class="flecha">${diaVuelta ? "⇄" : "✈"}</span> ${v.destination}
+              ${directo ? '<span class="etiqueta-directo">Directo</span>' : ''}
+            </div>
+            <div class="detalle">${dia} · ${v.airline} · ${horas}h ${mins}min${escalas}</div>
+            ${lineaVuelta}
           </div>
-          <div class="detalle">${dia} · ${v.airline} · ${horas}h ${mins}min${escalas}</div>
-          ${lineaVuelta}
-        </div>
-        <div class="precio">${v.price}€</div>
-        <a class="reservar" href="${enlace}" target="_blank" rel="noopener">Reservar</a>`;
-      resultados.appendChild(div);
-    });
+          <div class="precio">${v.price}€</div>
+          <a class="reservar" href="${enlace}" target="_blank" rel="noopener">Reservar</a>`;
+        resultados.appendChild(div);
+      });
+    }
+
+    estado.innerHTML = aviso + `${vuelos.length} vuelo(s) encontrados — precio ${esIdaVuelta ? "de ida y vuelta" : "solo ida"}`;
+    pintarVuelos("todos");
   } catch (err) {
     estado.textContent = "No pudimos completar la búsqueda. Espera unos segundos y reintenta.";
   }
