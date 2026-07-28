@@ -1,3 +1,4 @@
+from typing import Optional
 import os
 import httpx
 from fastapi import FastAPI, HTTPException
@@ -19,7 +20,7 @@ def salud():
     return {"estado": "ok"}
 
 @app.get("/buscar")
-async def buscar(origen: str, destino: str, fecha: str, regreso: str = None):
+async def buscar(origen: str, destino: str, fecha: str, regreso: Optional[str] = None):
     if not TOKEN:
         raise HTTPException(500, "Token no configurado")
 
@@ -50,7 +51,7 @@ async def buscar(origen: str, destino: str, fecha: str, regreso: str = None):
     return r.json()
 
 @app.get("/calendario")
-async def calendario(origen: str, destino: str, fecha: str, regreso: str = None):
+async def calendario(origen: str, destino: str, fecha: str, regreso: Optional[str] = None):
     """Precio más barato por cada día del mes (para el gráfico de barras)."""
     if not TOKEN:
         raise HTTPException(500, "Token no configurado")
