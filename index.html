@@ -627,6 +627,13 @@ function normalizar(t) {
   return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+/* Escapa HTML para insertar datos externos (API) de forma segura en innerHTML */
+function escapeHTML(str) {
+  return String(str).replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+  }[c]));
+}
+
 /* ---------- Autocompletado ---------- */
 const seleccion = { origen:null, destino:null };
 
@@ -641,7 +648,7 @@ function montarAutocompletado(idInput, idLista, clave) {
     coincidencias.slice(0, 8).forEach(([ciudad, pais, iata]) => {
       const fila = document.createElement("div");
       fila.className = "sugerencia";
-      fila.innerHTML = `<span><span class="ciudad">${ciudad}</span> <span class="pais">· ${pais}</span></span><span class="iata">${iata}</span>`;
+      fila.innerHTML = `<span><span class="ciudad">${escapeHTML(ciudad)}</span> <span class="pais">· ${escapeHTML(pais)}</span></span><span class="iata">${escapeHTML(iata)}</span>`;
       fila.addEventListener("mousedown", () => {   /* mousedown gana al blur */
         seleccion[clave] = iata;
         input.value = `${ciudad} (${iata})`;
@@ -797,7 +804,7 @@ function pintarCalendario(datos, mes) {
     panelDia.innerHTML = `
       <div class="dato">
         <div class="dia">✈️ ${d} de ${MESES[numMes-1]}</div>
-        <div class="extra">${v.airline || ""} · ${escalas}</div>
+        <div class="extra">${escapeHTML(v.airline || "")} · ${escalas}</div>
       </div>
       <div class="precio-dia">${v.price}€</div>
       <a class="reservar-dia" href="${enlace}" target="_blank" rel="noopener">Reservar</a>`;
@@ -931,7 +938,7 @@ document.getElementById("buscar").addEventListener("click", async () => {
       caja.className = "vuelo";
       caja.innerHTML = `
         <div class="info">
-          <div class="trayecto">${seleccion.origen} <span class="flecha">${soloIda ? "✈" : "⇄"}</span> ${seleccion.destino}</div>
+          <div class="trayecto">${escapeHTML(seleccion.origen)} <span class="flecha">${soloIda ? "✈" : "⇄"}</span> ${escapeHTML(seleccion.destino)}</div>
           <div class="detalle">Consulta precios actualizados directamente en Aviasales</div>
         </div>
         <a class="reservar" href="${enlaceVivo}" target="_blank" rel="noopener">Ver vuelos en vivo</a>`;
@@ -987,10 +994,10 @@ document.getElementById("buscar").addEventListener("click", async () => {
         div.className = "vuelo";
         div.innerHTML = `
           <div class="info">
-            <div class="trayecto">${v.origin} <span class="flecha">${diaVuelta ? "⇄" : "✈"}</span> ${v.destination}
+            <div class="trayecto">${escapeHTML(v.origin)} <span class="flecha">${diaVuelta ? "⇄" : "✈"}</span> ${escapeHTML(v.destination)}
               ${directo ? '<span class="etiqueta-directo">Directo</span>' : ''}
             </div>
-            <div class="detalle">${dia} · ${v.airline} · ${horas}h ${mins}min${escalas}</div>
+            <div class="detalle">${dia} · ${escapeHTML(v.airline)} · ${horas}h ${mins}min${escalas}</div>
             ${lineaVuelta}
           </div>
           <div class="precio">${v.price}€</div>
@@ -1050,7 +1057,7 @@ function nombreCiudad(iata) {
       const tarjeta = document.createElement("div");
       tarjeta.className = "chollo";
       tarjeta.innerHTML = `
-        <div class="ciudad">${nombreCiudad(v.destination)}</div>
+        <div class="ciudad">${escapeHTML(nombreCiudad(v.destination))}</div>
         <div class="cuando">${bonito(v.departure_at)} → ${bonito(v.return_at)}</div>
         <div class="cuando">${v.transfers === 0 ? "Directo" : v.transfers + " escala(s)"}</div>
         <div class="precio-ch">${v.price}€</div>
