@@ -1,10 +1,19 @@
 from typing import Optional
 import os
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 app = FastAPI()
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,7 +33,8 @@ def salud():
     return {"estado": "ok"}
 
 @app.get("/buscar")
-async def buscar(origen: str, destino: str, fecha: str, regreso: Optional[str] = None):
+@limiter.limit("60/minute")
+async def buscar(request: Request, origen: str, destino: str, fecha: str, regreso: Optional[str] = None):
     if not TOKEN:
         raise HTTPException(500, "Token no configurado")
 
@@ -55,7 +65,8 @@ async def buscar(origen: str, destino: str, fecha: str, regreso: Optional[str] =
     return r.json()
 
 @app.get("/calendario")
-async def calendario(origen: str, destino: str, fecha: str, regreso: Optional[str] = None):
+@limiter.limit("60/minute")
+async def calendario(request: Request, origen: str, destino: str, fecha: str, regreso: Optional[str] = None):
     """Precio más barato por cada día del mes (para el gráfico de barras)."""
     if not TOKEN:
         raise HTTPException(500, "Token no configurado")
@@ -82,7 +93,8 @@ async def calendario(origen: str, destino: str, fecha: str, regreso: Optional[st
     return r.json()
 
 @app.get("/chollos")
-async def chollos(origen: str = "MAD"):
+@limiter.limit("60/minute")
+async def chollos(request: Request, origen: str = "MAD"):
     """Vuelos más baratos que salen de una ciudad hacia cualquier destino."""
     if not TOKEN:
         raise HTTPException(500, "Token no configurado")
