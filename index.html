@@ -117,7 +117,7 @@
   <div id="resultados"></div>
 
   <div class="chollos" id="chollos">
-    <h2>🔥 Chollos de hoy desde Madrid</h2>
+    <h2 id="titulo-chollos">🔥 Chollos de hoy desde Madrid</h2>
     <div class="subtitulo">Ida y vuelta, precios detectados en las últimas horas</div>
     <div class="rejilla-chollos" id="rejilla-chollos"></div>
   </div>
@@ -256,6 +256,7 @@ function montarAutocompletado(idInput, idLista, clave) {
         seleccion[clave] = iata;
         input.value = `${ciudad} (${iata})`;
         cerrar();
+        if (clave === "origen") cargarChollos(iata);
       });
       lista.appendChild(fila);
     });
@@ -638,11 +639,16 @@ function nombreCiudad(iata) {
   return enLista ? enLista[0] : iata;
 }
 
-(async function cargarChollos() {
+async function cargarChollos(origenIATA) {
   const seccion = document.getElementById("chollos");
   const rejilla = document.getElementById("rejilla-chollos");
+  const titulo = document.getElementById("titulo-chollos");
+  const iata = origenIATA || "MAD";
+  const ciudadNombre = nombreCiudad(iata);
+  if (titulo) titulo.textContent = `🔥 Chollos de hoy desde ${ciudadNombre}`;
+  rejilla.innerHTML = "";
   try {
-    const r = await fetch(`${BACKEND}/chollos?origen=MAD`);
+    const r = await fetch(`${BACKEND}/chollos?origen=${iata}`);
     if (!r.ok) return;
     const datos = await r.json();
     const lista = Object.values(datos.data || {})
@@ -670,7 +676,10 @@ function nombreCiudad(iata) {
 
     seccion.style.display = "block";
   } catch (e) { /* si falla, la sección simplemente no aparece */ }
-})();
+}
+
+/* Cargar chollos iniciales desde Madrid */
+cargarChollos("MAD");
 
 /* ---------- Compartir ---------- */
 (function compartir() {
