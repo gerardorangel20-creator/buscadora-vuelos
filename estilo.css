@@ -63,7 +63,7 @@ header p.lema { color:var(--apagado); margin-top:8px; font-size:1.05rem; }
   .ruta-punteada, .avioncito { animation:none; }
 }
 
-main { max-width:680px; margin:0 auto; padding:16px 16px 48px; }
+main { max-width:900px; margin:0 auto; padding:16px 16px 48px; }
 
 /* ---------- Formulario ---------- */
 .tarjeta {
@@ -361,6 +361,7 @@ header, main { position:relative; z-index:1; }
 .rejilla-chollos {
   display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;
 }
+@media (min-width:900px) { .rejilla-chollos { grid-template-columns:repeat(4, 1fr); } }
 @media (max-width:560px) { .rejilla-chollos { grid-template-columns:repeat(2, 1fr); } }
 .chollo {
   background:var(--nube); border:1px solid var(--borde); border-radius:18px;
@@ -385,6 +386,7 @@ header, main { position:relative; z-index:1; }
 .rejilla-destinos {
   display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;
 }
+@media (min-width:900px) { .rejilla-destinos { grid-template-columns:repeat(4, 1fr); } }
 @media (max-width:560px) { .rejilla-destinos { grid-template-columns:repeat(2, 1fr); } }
 .destino {
   border:none; border-radius:20px; padding:72px 12px 16px; cursor:pointer;
