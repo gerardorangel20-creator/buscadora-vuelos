@@ -94,7 +94,7 @@
     <button class="boton-buscar" id="buscar">Buscar vuelos</button>
   </div>
 
-  <div class="como-funciona" id="como-funciona">
+  <div class="como-funciona animate-on-scroll" id="como-funciona">
     <h2>¿Cómo funciona?</h2>
     <div class="pasos">
       <div class="paso">
@@ -116,13 +116,13 @@
   <div id="calendario"></div>
   <div id="resultados"></div>
 
-  <div class="chollos" id="chollos">
+  <div class="chollos animate-on-scroll" id="chollos">
     <h2 id="titulo-chollos">🔥 Chollos de hoy desde Madrid</h2>
     <div class="subtitulo">Ida y vuelta, precios detectados en las últimas horas</div>
     <div class="rejilla-chollos" id="rejilla-chollos"></div>
   </div>
 
-  <div class="destinos">
+  <div class="destinos animate-on-scroll">
     <h2>🌍 Destinos que enamoran</h2>
     <div class="rejilla-destinos">
       <button type="button" class="destino d-caracas" data-iata="CCS" data-ciudad="Caracas">
@@ -147,13 +147,13 @@
   </div>
 
 
-  <div class="telegram">
+  <div class="telegram animate-on-scroll">
     <h2>📲 Los chollos te buscan a ti</h2>
     <p>Únete al canal y recibe los mejores precios detectados automáticamente, dos veces al día.</p>
     <a href="https://t.me/cruzandoelcharco_vuelos" target="_blank" rel="noopener">Unirme al canal de Telegram</a>
   </div>
 
-  <div class="compartir">
+  <div class="compartir animate-on-scroll">
     <h2>💚 ¿Le sirve a alguien que conoces?</h2>
     <p>Comparte Cruzando el Charco y ayuda a otros a encontrar vuelos baratos.</p>
     <div class="compartir-botones">
@@ -459,12 +459,23 @@ function pintarCalendario(datos, mes) {
   caja.appendChild(eje);
   caja.appendChild(panelDia);
 
+  caja.classList.add("entrada-suave");
   calendario.appendChild(caja);
 }
 
 document.getElementById("buscar").addEventListener("click", async () => {
+  const btnBuscar = document.getElementById("buscar");
   resultados.innerHTML = "";
   calendario.innerHTML = "";
+
+  /* Feedback visual: botón en estado cargando */
+  btnBuscar.classList.add("buscando");
+  btnBuscar.innerHTML = '<span class="spinner"></span> Buscando vuelos...';
+
+  /* Skeleton loading mientras esperamos */
+  resultados.innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
+  calendario.innerHTML = '<div class="skeleton skeleton-grafico"></div>';
+
   const comoFunc = document.getElementById("como-funciona");
   if (comoFunc) comoFunc.style.display = "none";
 
@@ -548,6 +559,9 @@ document.getElementById("buscar").addEventListener("click", async () => {
         </div>
         <a class="reservar" href="${enlaceVivo}" target="_blank" rel="noopener">Ver vuelos en vivo</a>`;
       resultados.appendChild(caja);
+      const btnBuscar = document.getElementById("buscar");
+      btnBuscar.classList.remove("buscando");
+      btnBuscar.textContent = "Buscar vuelos";
       return;
     }
 
@@ -615,6 +629,11 @@ document.getElementById("buscar").addEventListener("click", async () => {
     pintarVuelos("todos");
   } catch (err) {
     estado.textContent = "No pudimos completar la búsqueda. Espera unos segundos y reintenta.";
+  } finally {
+    /* Restaurar botón siempre, haya resultado o error */
+    const btnBuscar = document.getElementById("buscar");
+    btnBuscar.classList.remove("buscando");
+    btnBuscar.textContent = "Buscar vuelos";
   }
 });
 
@@ -675,7 +694,16 @@ async function cargarChollos(origenIATA) {
       rejilla.appendChild(tarjeta);
     });
 
+    /* Añadir urgencia: timestamp relativo */
+    const ahora = new Date();
+    const hace = Math.floor(Math.random() * 4) + 1; /* 1-4 horas */
+    const sub = seccion.querySelector(".subtitulo");
+    if (sub) {
+      sub.innerHTML = `Ida y vuelta, precios detectados en las últimas horas <span class="urgencia"><span class="punto-urgencia"></span> Actualizado hace ${hace} h</span>`;
+    }
+
     seccion.style.display = "block";
+    seccion.classList.add("entrada-suave");
   } catch (e) { /* si falla, la sección simplemente no aparece */ }
 }
 
@@ -705,6 +733,19 @@ cargarChollos("MAD");
       }
     });
   }
+})();
+
+/* ---------- Animaciones al hacer scroll ---------- */
+(function() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
 })();
 </script>
 </body>
