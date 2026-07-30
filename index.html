@@ -44,11 +44,15 @@
   <h1>Cruzando <span class="mar">el Charco</span></h1>
   <p class="lema">Vuelos baratos a América, Europa y más allá — sin complicarte</p>
   <div class="globo" aria-hidden="true"><div class="tierra"></div></div>
-  <svg class="charco" viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <svg class="charco" id="charco-svg" viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" title="Toca para buscar vuelos">
     <path class="ruta-punteada" d="M 60 88 Q 280 -10 500 88"/>
-    <circle cx="60" cy="88" r="6" fill="#0E9AA7"/>
-    <circle cx="500" cy="88" r="6" fill="#FF6B57"/>
-    <g class="avioncito">
+    <g class="punto-parallax" data-depth="0.03">
+      <circle cx="60" cy="88" r="6" fill="#0E9AA7"/>
+    </g>
+    <g class="punto-parallax" data-depth="0.03">
+      <circle cx="500" cy="88" r="6" fill="#FF6B57"/>
+    </g>
+    <g class="avioncito avion-parallax" data-depth="0.08">
       <text x="280" y="42" font-size="26" text-anchor="middle">✈️</text>
     </g>
   </svg>
@@ -126,22 +130,22 @@
     <h2>🌍 Destinos que enamoran</h2>
     <div class="rejilla-destinos">
       <button type="button" class="destino d-caracas" data-iata="CCS" data-ciudad="Caracas">
-        <span class="nombre">Caracas</span><span class="pais">Venezuela</span>
+        <span class="nombre">Caracas</span><span class="pais">Venezuela</span><span class="precio-destino" data-destino="CCS">Desde —</span>
       </button>
       <button type="button" class="destino d-bogota" data-iata="BOG" data-ciudad="Bogotá">
-        <span class="nombre">Bogotá</span><span class="pais">Colombia</span>
+        <span class="nombre">Bogotá</span><span class="pais">Colombia</span><span class="precio-destino" data-destino="BOG">Desde —</span>
       </button>
       <button type="button" class="destino d-miami" data-iata="MIA" data-ciudad="Miami">
-        <span class="nombre">Miami</span><span class="pais">Estados Unidos</span>
+        <span class="nombre">Miami</span><span class="pais">Estados Unidos</span><span class="precio-destino" data-destino="MIA">Desde —</span>
       </button>
       <button type="button" class="destino d-buenosaires" data-iata="EZE" data-ciudad="Buenos Aires">
-        <span class="nombre">Buenos Aires</span><span class="pais">Argentina</span>
+        <span class="nombre">Buenos Aires</span><span class="pais">Argentina</span><span class="precio-destino" data-destino="EZE">Desde —</span>
       </button>
       <button type="button" class="destino d-roma" data-iata="FCO" data-ciudad="Roma">
-        <span class="nombre">Roma</span><span class="pais">Italia</span>
+        <span class="nombre">Roma</span><span class="pais">Italia</span><span class="precio-destino" data-destino="FCO">Desde —</span>
       </button>
       <button type="button" class="destino d-estambul" data-iata="IST" data-ciudad="Estambul">
-        <span class="nombre">Estambul</span><span class="pais">Turquía</span>
+        <span class="nombre">Estambul</span><span class="pais">Turquía</span><span class="precio-destino" data-destino="IST">Desde —</span>
       </button>
     </div>
   </div>
@@ -257,7 +261,10 @@ function montarAutocompletado(idInput, idLista, clave) {
         seleccion[clave] = iata;
         input.value = `${ciudad} (${iata})`;
         cerrar();
-        if (clave === "origen") cargarChollos(iata);
+        if (clave === "origen") {
+          cargarChollos(iata);
+          actualizarPreciosDestinos(iata);
+        }
       });
       lista.appendChild(fila);
     });
@@ -747,6 +754,44 @@ cargarChollos("MAD");
 
   document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
 })();
+
+
+/* ---------- Precios dinámicos en tarjetas de destino ---------- */
+async function actualizarPreciosDestinos(origenIATA) {
+  const mesActual = new Date().toISOString().slice(0, 7);
+  const destinos = document.querySelectorAll('.precio-destino');
+
+  destinos.forEach(el => {
+    el.textContent = 'Desde —';
+    el.classList.remove('visible', 'sin-dato');
+    el.classList.add('cargando');
+  });
+
+  const promesas = Array.from(destinos).map(async (el) => {
+    const destino = el.dataset.destino;
+    try {
+      const r = await fetch(`${BACKEND}/calendario?origen=${origenIATA}&destino=${destino}&fecha=${mesActual}`);
+      if (!r.ok) throw new Error('Sin datos');
+      const data = await r.json();
+      const precios = Object.values(data.data || {});
+      if (precios.length === 0) throw new Error('Sin precios');
+      const masBarato = Math.min(...precios.map(p => p.price));
+      el.textContent = `Desde ${masBarato}€`;
+      el.classList.remove('cargando', 'sin-dato');
+      el.classList.add('visible');
+    } catch (e) {
+      el.textContent = 'Consultar precio';
+      el.classList.remove('cargando');
+      el.classList.add('sin-dato', 'visible');
+    }
+  });
+
+  await Promise.all(promesas);
+}
+
+/* Cargar precios iniciales desde Madrid */
+actualizarPreciosDestinos('MAD');
+
 </script>
 </body>
 </html>
