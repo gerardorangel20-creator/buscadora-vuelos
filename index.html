@@ -44,11 +44,15 @@
   <h1>Cruzando <span class="mar">el Charco</span></h1>
   <p class="lema">Vuelos baratos a América, Europa y más allá — sin complicarte</p>
   <div class="globo" aria-hidden="true"><div class="tierra"></div></div>
-  <svg class="charco" viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <svg class="charco" id="charco-svg" viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" title="Toca para buscar vuelos">
     <path class="ruta-punteada" d="M 60 88 Q 280 -10 500 88"/>
-    <circle cx="60" cy="88" r="6" fill="#0E9AA7"/>
-    <circle cx="500" cy="88" r="6" fill="#FF6B57"/>
-    <g class="avioncito">
+    <g class="punto-parallax" data-depth="0.03">
+      <circle cx="60" cy="88" r="6" fill="#0E9AA7"/>
+    </g>
+    <g class="punto-parallax" data-depth="0.03">
+      <circle cx="500" cy="88" r="6" fill="#FF6B57"/>
+    </g>
+    <g class="avioncito avion-parallax" data-depth="0.08">
       <text x="280" y="42" font-size="26" text-anchor="middle">✈️</text>
     </g>
   </svg>
