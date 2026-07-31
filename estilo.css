@@ -519,3 +519,20 @@ header, main { position:relative; z-index:1; }
 .entrada-suave {
   animation: slideUpFade 0.5s ease both;
 }
+
+/* ---------- Globo interactivo ---------- */
+.charco {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+.charco:hover {
+  transform: scale(1.02);
+}
+.avion-parallax {
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
+.punto-parallax {
+  transition: transform 0.1s ease-out;
+  will-change: transform;
+}
