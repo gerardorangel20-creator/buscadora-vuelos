@@ -44,7 +44,10 @@
 <header>
   <h1>Cruzando <span class="mar">el Charco</span></h1>
   <p class="lema">Vuelos baratos a América, Europa y más allá — sin complicarte</p>
-  <div class="globo" aria-hidden="true"><div class="tierra"></div></div>
+  <div class="globo-wrap">
+  <div class="globo" id="globo-3d" aria-hidden="true"><div class="tierra"></div></div>
+  <div class="globo-sombra" id="globo-sombra"></div>
+</div>
   <svg class="charco" id="charco-svg" viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" title="Toca para buscar vuelos">
     <path class="ruta-punteada" d="M 60 88 Q 280 -10 500 88"/>
     <g class="punto-parallax" data-depth="0.03">
@@ -795,41 +798,55 @@ actualizarPreciosDestinos('MAD');
 
 
 
-/* ---------- Globo interactivo: parallax + click ---------- */
+/* ---------- Globo 3D interactivo ---------- */
 (function() {
-  const svg = document.getElementById('charco-svg');
-  if (!svg) return;
+  const globo = document.getElementById('globo-3d');
+  const sombra = document.getElementById('globo-sombra');
+  const header = document.querySelector('header');
+  if (!globo || !header) return;
 
-  /* Click en el globo = bajar suave al buscador */
-  svg.addEventListener('click', () => {
+  /* Click en el globo = bajar al buscador */
+  globo.addEventListener('click', () => {
     document.querySelector('.tarjeta').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
-  /* Parallax: avión y puntos se mueven al pasar el ratón */
-  const parallaxElements = svg.querySelectorAll('.avion-parallax, .punto-parallax');
-  const header = document.querySelector('header');
-  if (!header) return;
-
+  /* Rotación 3D según posición del ratón */
   header.addEventListener('mousemove', (e) => {
-    const rect = svg.getBoundingClientRect();
+    const rect = globo.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    const moveX = (e.clientX - centerX) / rect.width;
-    const moveY = (e.clientY - centerY) / rect.height;
 
-    parallaxElements.forEach(el => {
-      const depth = parseFloat(el.dataset.depth) || 0.05;
-      const x = moveX * depth * 40;
-      const y = moveY * depth * 25;
-      el.style.transform = `translate(${x}px, ${y}px)`;
-    });
+    /* Cuánto se mueve el ratón desde el centro (-1 a 1) */
+    const percentX = (e.clientX - centerX) / (window.innerWidth / 2);
+    const percentY = (e.clientY - centerY) / (window.innerHeight / 2);
+
+    /* Rotación máxima: 25 grados */
+    const rotateY = percentX * 25;
+    const rotateX = -percentY * 20;
+
+    globo.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+    /* La sombra se mueve en dirección contraria */
+    if (sombra) {
+      const shadowX = -percentX * 15;
+      sombra.style.transform = `translateX(${shadowX}px)`;
+      sombra.style.opacity = 1 - Math.abs(percentY) * 0.3;
+    }
+
+    /* El brillo (::before) se desplaza ajustando background-position vía CSS variable */
+    const shineX = 30 + percentX * 20;
+    const shineY = 30 + percentY * 20;
+    globo.style.setProperty('--shine-x', shineX + '%');
+    globo.style.setProperty('--shine-y', shineY + '%');
   });
 
-  /* Al salir del header, vuelven a su sitio */
+  /* Al salir del header, vuelve a la posición neutral */
   header.addEventListener('mouseleave', () => {
-    parallaxElements.forEach(el => {
-      el.style.transform = '';
-    });
+    globo.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    if (sombra) {
+      sombra.style.transform = 'translateX(0px)';
+      sombra.style.opacity = 1;
+    }
   });
 })();
 
