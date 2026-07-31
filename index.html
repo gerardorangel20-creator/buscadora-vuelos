@@ -41,29 +41,33 @@
 <span class="decor globo-aero" aria-hidden="true">🎈</span>
 <span class="decor maleta" aria-hidden="true">🧳</span>
 
-<header>
+<header id="main-header">
   <h1>Cruzando <span class="mar">el Charco</span></h1>
   <p class="lema">Vuelos baratos a América, Europa y más allá — sin complicarte</p>
-  <div class="globo-wrap">
-  <div class="globo" id="globo-3d" aria-hidden="true"><div class="tierra"></div></div>
-  <div class="globo-sombra" id="globo-sombra"></div>
-</div>
-  <svg class="charco" id="charco-svg" viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" title="Toca para buscar vuelos">
-    <path class="ruta-punteada" d="M 60 88 Q 280 -10 500 88"/>
-    <g class="punto-parallax" data-depth="0.03">
+
+  <!-- Globo terráqueo interactivo -->
+  <div class="globo-wrap" id="globo-wrap" title="Toca para buscar vuelos">
+    <div class="globo" id="globo-3d"></div>
+    <div class="globo-sombra" id="globo-sombra"></div>
+  </div>
+
+  <!-- Ruta punteada con avión -->
+  <svg class="charco" id="charco-svg" viewBox="0 0 560 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path class="ruta-punteada" d="M 60 88 Q 280 -10 500 88" fill="none"/>
+    <g class="punto-origen">
       <circle cx="60" cy="88" r="6" fill="#0E9AA7"/>
     </g>
-    <g class="punto-parallax" data-depth="0.03">
+    <g class="punto-destino">
       <circle cx="500" cy="88" r="6" fill="#FF6B57"/>
     </g>
-    <g class="avioncito avion-parallax" data-depth="0.08">
+    <g class="avioncito">
       <text x="280" y="42" font-size="26" text-anchor="middle">✈️</text>
     </g>
   </svg>
 </header>
 
 <main>
-  <div class="tarjeta">
+  <div class="tarjeta" id="buscador-tarjeta">
     <div class="campo">
       <label for="origen">¿Desde dónde vuelas?</label>
       <input type="text" id="origen" placeholder="Ciudad o país — ej. Madrid, Colombia..." autocomplete="off">
@@ -154,7 +158,6 @@
     </div>
   </div>
 
-
   <div class="telegram animate-on-scroll">
     <h2>📲 Los chollos te buscan a ti</h2>
     <p>Únete al canal y recibe los mejores precios detectados automáticamente, dos veces al día.</p>
@@ -180,45 +183,35 @@
 <script>
 const BACKEND = "https://buscadora-vuelos.onrender.com";
 const MARKER = "748938";
-const TRS = "554704";        /* proyecto Cruzaelcharco (web) */
+const TRS = "554704";
 
-/* Envuelve una ruta de Aviasales en un enlace tp.media que SÍ registra clics */
 function enlaceAfiliado(rutaAviasales) {
   const destino = `https://www.aviasales.es${rutaAviasales}`;
   return `https://tp.media/r?marker=${MARKER}&trs=${TRS}&p=4114&campaign_id=100&u=${encodeURIComponent(destino)}`;
 }
 
-/* ---------- Aeropuertos: ciudad, país, IATA ---------- */
+/* ---------- Aeropuertos ---------- */
 const AEROPUERTOS = [
-  /* España */
   ["Madrid","España","MAD"],["Barcelona","España","BCN"],["Valencia","España","VLC"],
   ["Málaga","España","AGP"],["Sevilla","España","SVQ"],["Palma de Mallorca","España","PMI"],
   ["Alicante","España","ALC"],["Bilbao","España","BIO"],["Tenerife Norte","España","TFN"],
   ["Tenerife Sur","España","TFS"],["Gran Canaria","España","LPA"],["Santiago de Compostela","España","SCQ"],
-  /* Venezuela */
   ["Caracas","Venezuela","CCS"],["Maracaibo","Venezuela","MAR"],["Valencia","Venezuela","VLN"],
   ["Barcelona","Venezuela","BLA"],["Porlamar (Margarita)","Venezuela","PMV"],
-  /* Colombia */
   ["Bogotá","Colombia","BOG"],["Medellín","Colombia","MDE"],["Cali","Colombia","CLO"],
   ["Cartagena","Colombia","CTG"],["Barranquilla","Colombia","BAQ"],["Pereira","Colombia","PEI"],
-  /* Estados Unidos */
   ["Miami","Estados Unidos","MIA"],["Nueva York (JFK)","Estados Unidos","JFK"],
   ["Orlando","Estados Unidos","MCO"],["Houston","Estados Unidos","IAH"],["Los Ángeles","Estados Unidos","LAX"],
-  /* Cono Sur */
   ["Santiago de Chile","Chile","SCL"],["Buenos Aires (Ezeiza)","Argentina","EZE"],
   ["Montevideo","Uruguay","MVD"],["Asunción","Paraguay","ASU"],
-  /* Andinos */
   ["Lima","Perú","LIM"],["Quito","Ecuador","UIO"],["Guayaquil","Ecuador","GYE"],
   ["La Paz","Bolivia","LPB"],["Santa Cruz","Bolivia","VVI"],
-  /* Caribe y Centroamérica */
   ["Santo Domingo","República Dominicana","SDQ"],["Punta Cana","República Dominicana","PUJ"],
   ["La Habana","Cuba","HAV"],["San Juan","Puerto Rico","SJU"],["Panamá","Panamá","PTY"],
   ["San José","Costa Rica","SJO"],["Ciudad de Guatemala","Guatemala","GUA"],
   ["San Pedro Sula","Honduras","SAP"],["San Salvador","El Salvador","SAL"],
-  /* México y Brasil */
   ["Ciudad de México","México","MEX"],["Cancún","México","CUN"],["Guadalajara","México","GDL"],
   ["São Paulo","Brasil","GRU"],["Río de Janeiro","Brasil","GIG"],
-  /* Europa */
   ["Lisboa","Portugal","LIS"],["Oporto","Portugal","OPO"],
   ["París","Francia","CDG"],["Roma","Italia","FCO"],["Milán","Italia","MXP"],
   ["Venecia","Italia","VCE"],["Nápoles","Italia","NAP"],
@@ -230,16 +223,13 @@ const AEROPUERTOS = [
   ["Atenas","Grecia","ATH"],["Estambul","Turquía","IST"],
   ["Copenhague","Dinamarca","CPH"],["Estocolmo","Suecia","ARN"],["Oslo","Noruega","OSL"],
   ["Bucarest","Rumanía","OTP"],
-  /* África cercana */
   ["Marrakech","Marruecos","RAK"],["Casablanca","Marruecos","CMN"],["El Cairo","Egipto","CAI"]
 ];
 
-/* Quita tildes y pasa a minúsculas para comparar */
 function normalizar(t) {
-  return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-/* Escapa HTML para insertar datos externos (API) de forma segura en innerHTML */
 function escapeHTML(str) {
   return String(str).replace(/[&<>"']/g, c => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
@@ -261,7 +251,7 @@ function montarAutocompletado(idInput, idLista, clave) {
       const fila = document.createElement("div");
       fila.className = "sugerencia";
       fila.innerHTML = `<span><span class="ciudad">${escapeHTML(ciudad)}</span> <span class="pais">· ${escapeHTML(pais)}</span></span><span class="iata">${escapeHTML(iata)}</span>`;
-      fila.addEventListener("mousedown", () => {   /* mousedown gana al blur */
+      fila.addEventListener("mousedown", () => {
         seleccion[clave] = iata;
         input.value = `${ciudad} (${iata})`;
         cerrar();
@@ -278,12 +268,11 @@ function montarAutocompletado(idInput, idLista, clave) {
   let temporizador = null;
 
   input.addEventListener("input", () => {
-    seleccion[clave] = null;                      /* si edita, invalida lo elegido */
+    seleccion[clave] = null;
     const texto = input.value.trim();
     const q = normalizar(texto);
     if (q.length < 2) { cerrar(); clearTimeout(temporizador); return; }
 
-    /* 1) Respuesta instantánea con la lista local */
     const locales = AEROPUERTOS.filter(([ciudad, pais, iata]) =>
       normalizar(ciudad).includes(q) ||
       normalizar(pais).includes(q) ||
@@ -291,14 +280,13 @@ function montarAutocompletado(idInput, idLista, clave) {
     );
     pintar(locales);
 
-    /* 2) Consulta al autocompletado mundial de Travelpayouts (gratuito) */
     clearTimeout(temporizador);
     temporizador = setTimeout(async () => {
       try {
         const r = await fetch(`https://autocomplete.travelpayouts.com/places2?locale=es&types[]=city&types[]=airport&term=${encodeURIComponent(texto)}`);
         if (!r.ok) return;
         const lugares = await r.json();
-        if (normalizar(input.value.trim()) !== q) return;   /* ya escribió otra cosa */
+        if (normalizar(input.value.trim()) !== q) return;
 
         const vistos = new Set();
         const mundiales = [];
@@ -309,7 +297,7 @@ function montarAutocompletado(idInput, idLista, clave) {
         });
         locales.forEach(a => { if (!vistos.has(a[2])) { vistos.add(a[2]); mundiales.push(a); } });
         if (mundiales.length > 0) pintar(mundiales);
-      } catch (e) { /* sin conexión con el servicio: nos quedamos con la lista local */ }
+      } catch (e) { }
     }, 250);
   });
 
@@ -320,7 +308,7 @@ function montarAutocompletado(idInput, idLista, clave) {
 montarAutocompletado("origen", "sug-origen", "origen");
 montarAutocompletado("destino", "sug-destino", "destino");
 
-/* Intercambiar origen y destino */
+/* Intercambiar */
 document.getElementById("btn-intercambio").addEventListener("click", () => {
   const iOrigen = document.getElementById("origen");
   const iDestino = document.getElementById("destino");
@@ -328,7 +316,7 @@ document.getElementById("btn-intercambio").addEventListener("click", () => {
   [seleccion.origen, seleccion.destino] = [seleccion.destino, seleccion.origen];
 });
 
-/* Tarjetas de destinos populares: tocar = rellenar destino */
+/* Destinos */
 document.querySelectorAll(".destino").forEach(tarjeta => {
   tarjeta.addEventListener("click", () => {
     seleccion.destino = tarjeta.dataset.iata;
@@ -338,7 +326,7 @@ document.querySelectorAll(".destino").forEach(tarjeta => {
   });
 });
 
-/* ---------- Fechas de ida y vuelta ---------- */
+/* ---------- Fechas ---------- */
 const NOMBRES_MES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 const inIda = document.getElementById("fecha-ida");
 const inVuelta = document.getElementById("fecha-vuelta");
@@ -350,13 +338,11 @@ let tipoViaje = "ida-vuelta";
   inIda.min = hoy;
   inVuelta.min = hoy;
 
-  /* La vuelta nunca puede ser antes de la ida */
   inIda.addEventListener("change", () => {
     inVuelta.min = inIda.value || hoy;
     if (inVuelta.value && inVuelta.value < inIda.value) inVuelta.value = inIda.value;
   });
 
-  /* Solo ida / ida y vuelta */
   document.querySelectorAll(".tipo").forEach(boton => {
     boton.addEventListener("click", () => {
       document.querySelectorAll(".tipo").forEach(b => b.classList.remove("elegido"));
@@ -408,7 +394,7 @@ function pintarCalendario(datos, mes) {
   function elegirDia(clave, barra) {
     zona.querySelectorAll(".barra").forEach(b => b.classList.remove("seleccionada"));
     barra.classList.add("seleccionada");
-    inIda.value = clave;                     /* lo pasamos al formulario */
+    inIda.value = clave;
     inVuelta.min = clave;
     if (inVuelta.value && inVuelta.value < clave) inVuelta.value = clave;
     const v = datos[clave];
@@ -479,11 +465,9 @@ document.getElementById("buscar").addEventListener("click", async () => {
   resultados.innerHTML = "";
   calendario.innerHTML = "";
 
-  /* Feedback visual: botón en estado cargando */
   btnBuscar.classList.add("buscando");
   btnBuscar.innerHTML = '<span class="spinner"></span> Buscando vuelos...';
 
-  /* Skeleton loading mientras esperamos */
   resultados.innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
   calendario.innerHTML = '<div class="skeleton skeleton-grafico"></div>';
 
@@ -516,7 +500,6 @@ document.getElementById("buscar").addEventListener("click", async () => {
     let esIdaVuelta = !soloIda;
     let aviso = "";
 
-    /* Red 1 (solo en ida y vuelta): esos días exactos no tienen precio → probamos esos meses */
     if (vuelos.length === 0 && !soloIda) {
       const r2 = await fetch(`${base}&fecha=${mesElegido}&regreso=${mesRegreso}`);
       if (r2.ok) {
@@ -528,7 +511,6 @@ document.getElementById("buscar").addEventListener("click", async () => {
       }
     }
 
-    /* Red 2: probamos el mes entero, solo ida */
     if (vuelos.length === 0) {
       const r3 = await fetch(`${base}&fecha=${mesElegido}`);
       if (r3.ok) {
@@ -543,16 +525,14 @@ document.getElementById("buscar").addEventListener("click", async () => {
       }
     }
 
-    /* El gráfico es un extra: si falla, la búsqueda sigue adelante */
     try {
       if (rCal.ok) {
         const dataCal = await rCal.json();
         pintarCalendario(dataCal.data || {}, mesElegido);
       }
-    } catch (e) { /* sin gráfico, sin drama */ }
+    } catch (e) { }
 
     if (vuelos.length === 0) {
-      /* No hay precio guardado, pero mandamos al cliente a la búsqueda en vivo */
       const ddI = diaIda.slice(8,10), mmI = diaIda.slice(5,7);
       let ruta = `/search/${seleccion.origen}${ddI}${mmI}${seleccion.destino}`;
       if (!soloIda && diaVuelta) {
@@ -570,13 +550,11 @@ document.getElementById("buscar").addEventListener("click", async () => {
         </div>
         <a class="reservar" href="${enlaceVivo}" target="_blank" rel="noopener">Ver vuelos en vivo</a>`;
       resultados.appendChild(caja);
-      const btnBuscar = document.getElementById("buscar");
       btnBuscar.classList.remove("buscando");
       btnBuscar.textContent = "Buscar vuelos";
       return;
     }
 
-    /* Guardamos los vuelos y pintamos con el filtro activo */
     const cuenta = { directo: vuelos.filter(v => v.transfers === 0).length,
                      escala: vuelos.filter(v => v.transfers > 0).length };
 
@@ -586,7 +564,6 @@ document.getElementById("buscar").addEventListener("click", async () => {
       if (filtro === "directo") lista = vuelos.filter(v => v.transfers === 0);
       if (filtro === "escala")  lista = vuelos.filter(v => v.transfers > 0);
 
-      /* Barra de filtro (solo si hay variedad que filtrar) */
       const barra = document.createElement("div");
       barra.className = "filtro-escalas";
       barra.innerHTML = `
@@ -602,8 +579,8 @@ document.getElementById("buscar").addEventListener("click", async () => {
         vacio.className = "detalle";
         vacio.style.cssText = "text-align:center;color:var(--apagado);padding:14px";
         vacio.textContent = filtro === "directo"
-          ? "No hay vuelos directos guardados para esta ruta. Prueba \"Todos\" para ver las opciones con escala."
-          : "No hay vuelos con escala para mostrar. Prueba \"Todos\".";
+          ? "No hay vuelos directos guardados para esta ruta. Prueba "Todos" para ver las opciones con escala."
+          : "No hay vuelos con escala para mostrar. Prueba "Todos".";
         resultados.appendChild(vacio);
         return;
       }
@@ -641,14 +618,12 @@ document.getElementById("buscar").addEventListener("click", async () => {
   } catch (err) {
     estado.textContent = "No pudimos completar la búsqueda. Espera unos segundos y reintenta.";
   } finally {
-    /* Restaurar botón siempre, haya resultado o error */
-    const btnBuscar = document.getElementById("buscar");
     btnBuscar.classList.remove("buscando");
     btnBuscar.textContent = "Buscar vuelos";
   }
 });
 
-/* ---------- Chollos de hoy (se cargan solos al entrar) ---------- */
+/* ---------- Chollos ---------- */
 const CIUDADES = {
   MOW:"Moscú", BCN:"Barcelona", ROM:"Roma", PAR:"París", LED:"San Petersburgo",
   TCI:"Tenerife", AMS:"Ámsterdam", IST:"Estambul", LON:"Londres", IBZ:"Ibiza",
@@ -705,9 +680,8 @@ async function cargarChollos(origenIATA) {
       rejilla.appendChild(tarjeta);
     });
 
-    /* Añadir urgencia: timestamp relativo */
     const ahora = new Date();
-    const hace = Math.floor(Math.random() * 4) + 1; /* 1-4 horas */
+    const hace = Math.floor(Math.random() * 4) + 1;
     const sub = seccion.querySelector(".subtitulo");
     if (sub) {
       sub.innerHTML = `Ida y vuelta, precios detectados en las últimas horas <span class="urgencia"><span class="punto-urgencia"></span> Actualizado hace ${hace} h</span>`;
@@ -715,10 +689,9 @@ async function cargarChollos(origenIATA) {
 
     seccion.style.display = "block";
     seccion.classList.add("entrada-suave");
-  } catch (e) { /* si falla, la sección simplemente no aparece */ }
+  } catch (e) { }
 }
 
-/* Cargar chollos iniciales desde Madrid */
 cargarChollos("MAD");
 
 /* ---------- Compartir ---------- */
@@ -746,7 +719,7 @@ cargarChollos("MAD");
   }
 })();
 
-/* ---------- Animaciones al hacer scroll ---------- */
+/* ---------- Animaciones scroll ---------- */
 (function() {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -759,8 +732,7 @@ cargarChollos("MAD");
   document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
 })();
 
-
-/* ---------- Precios dinámicos en tarjetas de destino ---------- */
+/* ---------- Precios destinos ---------- */
 async function actualizarPreciosDestinos(origenIATA) {
   const mesActual = new Date().toISOString().slice(0, 7);
   const destinos = document.querySelectorAll('.precio-destino');
@@ -793,63 +765,57 @@ async function actualizarPreciosDestinos(origenIATA) {
   await Promise.all(promesas);
 }
 
-/* Cargar precios iniciales desde Madrid */
 actualizarPreciosDestinos('MAD');
 
-
-
-/* ---------- Globo 3D interactivo ---------- */
+/* ---------- GLOBO INTERACTIVO ---------- */
 (function() {
+  const globoWrap = document.getElementById('globo-wrap');
   const globo = document.getElementById('globo-3d');
   const sombra = document.getElementById('globo-sombra');
-  const header = document.querySelector('header');
-  if (!globo || !header) return;
+  const header = document.getElementById('main-header');
+  const buscador = document.getElementById('buscador-tarjeta');
 
-  /* Click en el globo = bajar al buscador */
-  globo.addEventListener('click', () => {
-    document.querySelector('.tarjeta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!globoWrap || !globo || !header) return;
+
+  /* Click en el globo = baja al buscador */
+  globoWrap.addEventListener('click', () => {
+    if (buscador) {
+      buscador.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   });
 
-  /* Rotación 3D según posición del ratón */
+  /* Parallax suave: el globo se inclina ligeramente con el ratón */
   header.addEventListener('mousemove', (e) => {
-    const rect = globo.getBoundingClientRect();
+    const rect = globoWrap.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
 
-    /* Cuánto se mueve el ratón desde el centro (-1 a 1) */
     const percentX = (e.clientX - centerX) / (window.innerWidth / 2);
     const percentY = (e.clientY - centerY) / (window.innerHeight / 2);
 
-    /* Rotación máxima: 25 grados */
-    const rotateY = percentX * 25;
-    const rotateX = -percentY * 20;
+    /* Inclinación muy suave: máximo 15 grados */
+    const rotateY = percentX * 15;
+    const rotateX = -percentY * 12;
 
-    globo.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    globoWrap.style.transform = `perspective(600px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
 
     /* La sombra se mueve en dirección contraria */
     if (sombra) {
-      const shadowX = -percentX * 15;
+      const shadowX = -percentX * 20;
       sombra.style.transform = `translateX(${shadowX}px)`;
-      sombra.style.opacity = 1 - Math.abs(percentY) * 0.3;
+      sombra.style.opacity = 1 - Math.abs(percentY) * 0.2;
     }
-
-    /* El brillo (::before) se desplaza ajustando background-position vía CSS variable */
-    const shineX = 30 + percentX * 20;
-    const shineY = 30 + percentY * 20;
-    globo.style.setProperty('--shine-x', shineX + '%');
-    globo.style.setProperty('--shine-y', shineY + '%');
   });
 
   /* Al salir del header, vuelve a la posición neutral */
   header.addEventListener('mouseleave', () => {
-    globo.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    globoWrap.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg)';
     if (sombra) {
       sombra.style.transform = 'translateX(0px)';
       sombra.style.opacity = 1;
     }
   });
 })();
-
 </script>
 </body>
 </html>
