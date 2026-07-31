@@ -31,6 +31,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Outfit:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 
@@ -791,6 +792,46 @@ async function actualizarPreciosDestinos(origenIATA) {
 
 /* Cargar precios iniciales desde Madrid */
 actualizarPreciosDestinos('MAD');
+
+
+
+/* ---------- Globo interactivo: parallax + click ---------- */
+(function() {
+  const svg = document.getElementById('charco-svg');
+  if (!svg) return;
+
+  /* Click en el globo = bajar suave al buscador */
+  svg.addEventListener('click', () => {
+    document.querySelector('.tarjeta').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  /* Parallax: avión y puntos se mueven al pasar el ratón */
+  const parallaxElements = svg.querySelectorAll('.avion-parallax, .punto-parallax');
+  const header = document.querySelector('header');
+  if (!header) return;
+
+  header.addEventListener('mousemove', (e) => {
+    const rect = svg.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const moveX = (e.clientX - centerX) / rect.width;
+    const moveY = (e.clientY - centerY) / rect.height;
+
+    parallaxElements.forEach(el => {
+      const depth = parseFloat(el.dataset.depth) || 0.05;
+      const x = moveX * depth * 40;
+      const y = moveY * depth * 25;
+      el.style.transform = `translate(${x}px, ${y}px)`;
+    });
+  });
+
+  /* Al salir del header, vuelven a su sitio */
+  header.addEventListener('mouseleave', () => {
+    parallaxElements.forEach(el => {
+      el.style.transform = '';
+    });
+  });
+})();
 
 </script>
 </body>
