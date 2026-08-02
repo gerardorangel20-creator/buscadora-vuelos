@@ -30,9 +30,6 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Outfit:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css?v=2">
-<base target="_blank">
-<base target="_blank">
-<base target="_blank">
 </head>
 <body>
 
@@ -355,6 +352,14 @@ let tipoViaje = "ida-vuelta";
   inIda.addEventListener("change", () => {
     inVuelta.min = inIda.value || hoy;
     if (inVuelta.value && inVuelta.value < inIda.value) inVuelta.value = inIda.value;
+
+    /* Al elegir la ida, abrir automáticamente el calendario de vuelta (si es ida y vuelta) */
+    if (inIda.value && tipoViaje !== "solo-ida") {
+      inVuelta.focus();
+      if (typeof inVuelta.showPicker === "function") {
+        try { inVuelta.showPicker(); } catch (e) { /* algunos navegadores lo bloquean */ }
+      }
+    }
   });
 
   /* Solo ida / ida y vuelta */
@@ -571,7 +576,6 @@ document.getElementById("buscar").addEventListener("click", async () => {
         </div>
         <a class="reservar" href="${enlaceVivo}" target="_blank" rel="noopener">Ver vuelos en vivo</a>`;
       resultados.appendChild(caja);
-      const btnBuscar = document.getElementById("buscar");
       btnBuscar.classList.remove("buscando");
       btnBuscar.textContent = "Buscar vuelos";
       return;
@@ -643,7 +647,6 @@ document.getElementById("buscar").addEventListener("click", async () => {
     estado.textContent = "No pudimos completar la búsqueda. Espera unos segundos y reintenta.";
   } finally {
     /* Restaurar botón siempre, haya resultado o error */
-    const btnBuscar = document.getElementById("buscar");
     btnBuscar.classList.remove("buscando");
     btnBuscar.textContent = "Buscar vuelos";
   }
@@ -706,12 +709,10 @@ async function cargarChollos(origenIATA) {
       rejilla.appendChild(tarjeta);
     });
 
-    /* Añadir urgencia: timestamp relativo */
-    const ahora = new Date();
-    const hace = Math.floor(Math.random() * 4) + 1; /* 1-4 horas */
+    /* Timestamp real: los datos de Travelpayouts se refrescan con el vigilante 2 veces al día */
     const sub = seccion.querySelector(".subtitulo");
     if (sub) {
-      sub.innerHTML = `Ida y vuelta, precios detectados en las últimas horas <span class="urgencia"><span class="punto-urgencia"></span> Actualizado hace ${hace} h</span>`;
+      sub.innerHTML = `Ida y vuelta, mejores precios detectados <span class="urgencia"><span class="punto-urgencia"></span> Actualizado hoy</span>`;
     }
 
     seccion.style.display = "block";
