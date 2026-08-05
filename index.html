@@ -98,6 +98,14 @@
   }
   .cal-confirmar:hover:not(:disabled) { transform:translateY(-2px); }
   .cal-confirmar:disabled { opacity:.4; cursor:not-allowed; }
+  /* ===== Etiquetas de precio (bajo/normal/alto) ===== */
+  .tag-precio {
+    display:block; font-size:.7rem; font-weight:700; margin-top:3px;
+    padding:2px 8px; border-radius:8px; text-align:center;
+  }
+  .tag-bajo   { background:#E3F7EC; color:#1B9E5A; }
+  .tag-normal { background:#EEF3F7; color:#5B7A93; }
+  .tag-alto   { background:#FDECE8; color:#E5603E; }
 </style>
 </head>
 <body>
@@ -788,6 +796,7 @@ document.getElementById("buscar").addEventListener("click", async () => {
     const data = await r.json();
     let vuelos = (data.data || []).sort((a, b) => a.price - b.price);
     let esIdaVuelta = !soloIda;
+    let refPrecios = null;   /* {media, minimo} del mes, para etiquetar precios */
     let aviso = "";
 
     /* Red 1 (solo en ida y vuelta): esos días exactos no tienen precio → probamos esos meses */
@@ -821,6 +830,11 @@ document.getElementById("buscar").addEventListener("click", async () => {
     try {
       if (rCal.ok) {
         const dataCal = await rCal.json();
+        const preciosMes = Object.values(dataCal.data || {}).map(x => x.price).filter(Boolean);
+        if (preciosMes.length >= 3) {
+          const media = preciosMes.reduce((a,b) => a+b, 0) / preciosMes.length;
+          refPrecios = { media, minimo: Math.min(...preciosMes) };
+        }
         pintarCalendario(dataCal.data || {}, mesElegido);
       }
     } catch (e) { /* sin gráfico, sin drama */ }
@@ -847,6 +861,15 @@ document.getElementById("buscar").addEventListener("click", async () => {
       btnBuscar.classList.remove("buscando");
       btnBuscar.textContent = "Buscar vuelos";
       return;
+    }
+
+    /* Etiqueta de precio comparando con la media del mes (estilo Google Flights) */
+    function etiquetaPrecio(precio) {
+      if (!refPrecios) return "";
+      const { media } = refPrecios;
+      if (precio <= media * 0.85) return '<span class="tag-precio tag-bajo">Precio bajo</span>';
+      if (precio >= media * 1.15) return '<span class="tag-precio tag-alto">Precio alto</span>';
+      return '<span class="tag-precio tag-normal">Precio normal</span>';
     }
 
     /* Guardamos los vuelos y pintamos con el filtro activo */
@@ -903,7 +926,7 @@ document.getElementById("buscar").addEventListener("click", async () => {
             <div class="detalle">${dia} · ${escapeHTML(v.airline)} · ${horas}h ${mins}min${escalas}</div>
             ${lineaVuelta}
           </div>
-          <div class="precio">${v.price}€</div>
+          <div class="precio">${v.price}€${etiquetaPrecio(v.price)}</div>
           <a class="reservar" href="${enlace}" target="_blank" rel="noopener">Reservar</a>`;
         resultados.appendChild(div);
       });
