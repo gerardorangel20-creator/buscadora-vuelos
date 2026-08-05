@@ -31,15 +31,73 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Outfit:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css?v=2">
 <style>
-  /* Resaltado temporal del campo de vuelta al elegir la ida */
-  @keyframes latido-vuelta {
-    0%,100% { box-shadow: 0 0 0 0 rgba(14,154,167,0); }
-    50%     { box-shadow: 0 0 0 4px rgba(14,154,167,.35); }
+  /* ===== Disparador de fechas ===== */
+  .fechas-disparador {
+    display:flex; align-items:stretch; gap:0;
+    border:1.5px solid var(--borde,#CBE6F5); border-radius:16px; overflow:hidden;
+    background:var(--horizonte,#F4FBFF); cursor:pointer;
   }
-  #fecha-vuelta.resaltar-vuelta {
-    animation: latido-vuelta 1s ease-in-out 2;
-    border-color: #0E9AA7 !important;
+  .disp-lado { flex:1; padding:12px 16px; transition:background .15s; }
+  .disp-lado:hover { background:#E3F4FD; }
+  .disp-lado.activo { background:#D3ECFA; }
+  .disp-sep { display:flex; align-items:center; padding:0 6px; color:var(--apagado,#5B7A93); font-size:1.1rem; }
+  .disp-valor { font-size:1.05rem; font-weight:700; color:var(--tinta,#0B3954); margin-top:2px; }
+  .disp-valor.vacio { color:#9DBBD1; font-weight:500; }
+  .fechas-disparador.solo-ida .disp-sep,
+  .fechas-disparador.solo-ida #disp-vuelta { display:none; }
+
+  /* ===== Modal del calendario ===== */
+  .cal-overlay {
+    position:fixed; inset:0; background:rgba(11,57,84,.45);
+    display:none; align-items:center; justify-content:center; z-index:1000;
+    padding:16px;
   }
+  .cal-overlay.abierto { display:flex; }
+  .cal-modal {
+    background:#fff; border-radius:24px; width:100%; max-width:380px;
+    max-height:90vh; overflow-y:auto; padding:20px;
+    box-shadow:0 20px 60px rgba(11,57,84,.3);
+    font-family:'Outfit',sans-serif;
+  }
+  .cal-cabecera { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .cal-titulo { font-family:'Bricolage Grotesque',sans-serif; font-weight:600; font-size:1.15rem; color:var(--tinta,#0B3954); }
+  .cal-cerrar { background:none; border:none; font-size:1.3rem; color:var(--apagado,#5B7A93); cursor:pointer; padding:4px 8px; border-radius:8px; }
+  .cal-cerrar:hover { background:#F4FBFF; }
+  .cal-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .cal-flecha {
+    background:var(--horizonte,#F4FBFF); border:1.5px solid var(--borde,#CBE6F5);
+    width:40px; height:40px; border-radius:12px; font-size:1.3rem; color:var(--turquesa,#0E9AA7);
+    cursor:pointer; transition:all .15s;
+  }
+  .cal-flecha:hover { border-color:var(--turquesa,#0E9AA7); }
+  .cal-flecha:disabled { opacity:.3; cursor:not-allowed; }
+  .cal-mes-actual { font-weight:700; font-size:1.05rem; color:var(--tinta,#0B3954); text-transform:capitalize; }
+  .cal-dias-semana { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:6px; }
+  .cal-dias-semana span { text-align:center; font-size:.75rem; font-weight:700; color:var(--apagado,#5B7A93); padding:4px 0; }
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .cal-dia {
+    aspect-ratio:1; border:none; background:none; border-radius:10px;
+    font-family:'Outfit',sans-serif; font-size:.95rem; color:var(--tinta,#0B3954);
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:background .1s; position:relative;
+  }
+  .cal-dia:hover:not(:disabled) { background:#E3F4FD; }
+  .cal-dia:disabled { color:#C5D6E3; cursor:not-allowed; }
+  .cal-dia.vacio { visibility:hidden; }
+  .cal-dia.en-rango { background:#D3ECFA; border-radius:0; }
+  .cal-dia.extremo { background:var(--turquesa,#0E9AA7); color:#fff; font-weight:700; }
+  .cal-dia.extremo.ida { border-radius:10px 0 0 10px; }
+  .cal-dia.extremo.vuelta { border-radius:0 10px 10px 0; }
+  .cal-dia.extremo.unico { border-radius:10px; }
+  .cal-pie { display:flex; align-items:center; justify-content:space-between; margin-top:16px; gap:10px; }
+  .cal-resumen { font-size:.9rem; color:var(--apagado,#5B7A93); flex:1; }
+  .cal-confirmar {
+    background:var(--coral,#FF6B57); color:#fff; border:none; font-family:'Outfit',sans-serif;
+    font-weight:700; font-size:1rem; padding:12px 26px; border-radius:14px; cursor:pointer;
+    transition:transform .15s, opacity .15s;
+  }
+  .cal-confirmar:hover:not(:disabled) { transform:translateY(-2px); }
+  .cal-confirmar:disabled { opacity:.4; cursor:not-allowed; }
 </style>
 </head>
 <body>
@@ -95,17 +153,41 @@
         <button type="button" class="tipo elegido" data-tipo="ida-vuelta">Ida y vuelta</button>
         <button type="button" class="tipo" data-tipo="solo-ida">Solo ida</button>
       </div>
-      <div class="fechas">
-        <div>
+      <div class="fechas-disparador" id="fechas-disparador">
+        <div class="disp-lado" id="disp-ida">
           <div class="sub-fecha">Ida</div>
-          <input type="date" id="fecha-ida" aria-label="Día de ida">
+          <div class="disp-valor" id="valor-ida">Elegir fecha</div>
         </div>
-        <div id="caja-vuelta">
+        <div class="disp-sep" id="disp-sep">→</div>
+        <div class="disp-lado" id="disp-vuelta">
           <div class="sub-fecha">Vuelta</div>
-          <input type="date" id="fecha-vuelta" aria-label="Día de vuelta">
+          <div class="disp-valor" id="valor-vuelta">Elegir fecha</div>
         </div>
       </div>
       <div class="aviso-flexible" id="aviso-flexible">Si ese día exacto no tiene precio guardado, te enseñamos lo más barato de ese mes.</div>
+    </div>
+
+    <!-- Calendario de rango (modal) -->
+    <div class="cal-overlay" id="cal-overlay">
+      <div class="cal-modal">
+        <div class="cal-cabecera">
+          <div class="cal-titulo" id="cal-titulo">Elige tu fecha de ida</div>
+          <button type="button" class="cal-cerrar" id="cal-cerrar" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="cal-nav">
+          <button type="button" class="cal-flecha" id="cal-prev" aria-label="Mes anterior">‹</button>
+          <div class="cal-mes-actual" id="cal-mes-actual"></div>
+          <button type="button" class="cal-flecha" id="cal-next" aria-label="Mes siguiente">›</button>
+        </div>
+        <div class="cal-dias-semana">
+          <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-pie">
+          <div class="cal-resumen" id="cal-resumen">Toca el día de ida</div>
+          <button type="button" class="cal-confirmar" id="cal-confirmar" disabled>Confirmar</button>
+        </div>
+      </div>
     </div>
 
     <button class="boton-buscar" id="buscar">Buscar vuelos</button>
@@ -347,44 +429,219 @@ document.querySelectorAll(".destino").forEach(tarjeta => {
   });
 });
 
-/* ---------- Fechas de ida y vuelta ---------- */
+/* ---------- Calendario de rango ---------- */
 const NOMBRES_MES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-const inIda = document.getElementById("fecha-ida");
-const inVuelta = document.getElementById("fecha-vuelta");
-const cajaVuelta = document.getElementById("caja-vuelta");
+const NOMBRES_MES_LARGO = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 let tipoViaje = "ida-vuelta";
 
-(function prepararFechas() {
-  const hoy = new Date().toISOString().slice(0, 10);
-  inIda.min = hoy;
-  inVuelta.min = hoy;
+/* Objeto que reemplaza a los antiguos inputs: guarda las fechas elegidas como texto YYYY-MM-DD */
+const fechas = { ida:null, vuelta:null };
 
-  /* La vuelta nunca puede ser antes de la ida */
-  inIda.addEventListener("change", () => {
-    inVuelta.min = inIda.value || hoy;
-    if (inVuelta.value && inVuelta.value < inIda.value) inVuelta.value = inIda.value;
+/* Compatibilidad: el resto del código usa inIda.value / inVuelta.value.
+   Creamos objetos falsos que exponen .value y algún método, para no reescribir todo. */
+const inIda = {
+  get value() { return fechas.ida || ""; },
+  set value(v) { fechas.ida = v || null; refrescarDisparador(); }
+};
+const inVuelta = {
+  get value() { return fechas.vuelta || ""; },
+  set value(v) { fechas.vuelta = v || null; refrescarDisparador(); },
+  get min() { return fechas.ida || ""; },
+  set min(v) { /* no-op, el calendario ya valida */ }
+};
 
-    /* Al elegir la ida, resaltar el campo de vuelta para que el usuario lo vea
-       (NO abrimos el calendario solo: en móvil showPicker atropella la selección
-       y mete una fecha por defecto). El usuario da un toque para abrirlo. */
-    if (inIda.value && tipoViaje !== "solo-ida" && !inVuelta.value) {
-      inVuelta.classList.add("resaltar-vuelta");
-      setTimeout(() => inVuelta.classList.remove("resaltar-vuelta"), 2500);
+const disparador = document.getElementById("fechas-disparador");
+const overlay = document.getElementById("cal-overlay");
+const grid = document.getElementById("cal-grid");
+const calMesActual = document.getElementById("cal-mes-actual");
+const calTitulo = document.getElementById("cal-titulo");
+const calResumen = document.getElementById("cal-resumen");
+const calConfirmar = document.getElementById("cal-confirmar");
+const calPrev = document.getElementById("cal-prev");
+const calNext = document.getElementById("cal-next");
+
+let mesVista = new Date();
+mesVista.setDate(1);
+let selIda = null;     /* Date temporal mientras el calendario está abierto */
+let selVuelta = null;
+
+function fmtCorto(fechaStr) {
+  if (!fechaStr) return "Elegir fecha";
+  const [a,m,d] = fechaStr.split("-").map(Number);
+  return `${d} ${NOMBRES_MES[m-1]}`;
+}
+
+function refrescarDisparador() {
+  const vIda = document.getElementById("valor-ida");
+  const vVuelta = document.getElementById("valor-vuelta");
+  vIda.textContent = fmtCorto(fechas.ida);
+  vIda.classList.toggle("vacio", !fechas.ida);
+  vVuelta.textContent = fmtCorto(fechas.vuelta);
+  vVuelta.classList.toggle("vacio", !fechas.vuelta);
+}
+
+function aStr(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
+
+function mismasFecha(a, b) {
+  return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+
+function pintarCalendarioRango() {
+  const anio = mesVista.getFullYear();
+  const mes = mesVista.getMonth();
+  calMesActual.textContent = `${NOMBRES_MES_LARGO[mes]} ${anio}`;
+
+  /* No dejar navegar a meses pasados */
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const primerDiaMesVista = new Date(anio, mes, 1);
+  const mesActualReal = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  calPrev.disabled = primerDiaMesVista <= mesActualReal;
+
+  grid.innerHTML = "";
+  /* getDay: 0=domingo. Queremos lunes primero, así que ajustamos */
+  let primerDiaSemana = new Date(anio, mes, 1).getDay();
+  primerDiaSemana = (primerDiaSemana === 0) ? 6 : primerDiaSemana - 1;
+  const diasEnMes = new Date(anio, mes+1, 0).getDate();
+
+  for (let i=0; i<primerDiaSemana; i++) {
+    const vacio = document.createElement("div");
+    vacio.className = "cal-dia vacio";
+    grid.appendChild(vacio);
+  }
+
+  for (let d=1; d<=diasEnMes; d++) {
+    const fecha = new Date(anio, mes, d);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "cal-dia";
+    btn.textContent = d;
+
+    if (fecha < hoy) {
+      btn.disabled = true;
+    } else {
+      /* Marcado según selección */
+      const esIda = mismasFecha(fecha, selIda);
+      const esVuelta = mismasFecha(fecha, selVuelta);
+      if (selIda && selVuelta && fecha > selIda && fecha < selVuelta) {
+        btn.classList.add("en-rango");
+      }
+      if (esIda || esVuelta) {
+        btn.classList.add("extremo");
+        if (tipoViaje === "solo-ida") btn.classList.add("unico");
+        else if (esIda && selVuelta) btn.classList.add("ida");
+        else if (esVuelta) btn.classList.add("vuelta");
+        else btn.classList.add("unico");
+      }
+      btn.addEventListener("click", () => tocarDia(fecha));
     }
-  });
+    grid.appendChild(btn);
+  }
+}
 
-  /* Solo ida / ida y vuelta */
-  document.querySelectorAll(".tipo").forEach(boton => {
-    boton.addEventListener("click", () => {
-      document.querySelectorAll(".tipo").forEach(b => b.classList.remove("elegido"));
-      boton.classList.add("elegido");
-      tipoViaje = boton.dataset.tipo;
-      const soloIda = tipoViaje === "solo-ida";
-      cajaVuelta.style.display = soloIda ? "none" : "";
-      if (soloIda) inVuelta.value = "";
-    });
+function tocarDia(fecha) {
+  if (tipoViaje === "solo-ida") {
+    selIda = fecha;
+    selVuelta = null;
+  } else {
+    /* Primer toque, o reiniciar si ya había rango completo */
+    if (!selIda || (selIda && selVuelta)) {
+      selIda = fecha;
+      selVuelta = null;
+    } else {
+      /* Segundo toque */
+      if (fecha < selIda) {
+        /* si toca antes de la ida, esa pasa a ser la nueva ida */
+        selIda = fecha;
+      } else if (mismasFecha(fecha, selIda)) {
+        /* mismo día: no hacer vuelta */
+      } else {
+        selVuelta = fecha;
+      }
+    }
+  }
+  actualizarResumen();
+  pintarCalendarioRango();
+}
+
+function actualizarResumen() {
+  if (tipoViaje === "solo-ida") {
+    if (selIda) {
+      calResumen.textContent = `Ida: ${selIda.getDate()} ${NOMBRES_MES[selIda.getMonth()]}`;
+      calConfirmar.disabled = false;
+    } else {
+      calResumen.textContent = "Toca el día de tu viaje";
+      calConfirmar.disabled = true;
+    }
+    return;
+  }
+  if (selIda && selVuelta) {
+    calResumen.textContent = `${selIda.getDate()} ${NOMBRES_MES[selIda.getMonth()]} → ${selVuelta.getDate()} ${NOMBRES_MES[selVuelta.getMonth()]}`;
+    calConfirmar.disabled = false;
+  } else if (selIda) {
+    calResumen.textContent = `Ida: ${selIda.getDate()} ${NOMBRES_MES[selIda.getMonth()]}. Ahora la vuelta.`;
+    calConfirmar.disabled = true;
+  } else {
+    calResumen.textContent = "Toca el día de ida";
+    calConfirmar.disabled = true;
+  }
+}
+
+function abrirCalendario() {
+  /* Partir de lo ya elegido, si hay */
+  if (fechas.ida) {
+    const [a,m,d] = fechas.ida.split("-").map(Number);
+    selIda = new Date(a, m-1, d);
+    mesVista = new Date(a, m-1, 1);
+  } else {
+    selIda = null;
+    mesVista = new Date(); mesVista.setDate(1);
+  }
+  if (fechas.vuelta) {
+    const [a,m,d] = fechas.vuelta.split("-").map(Number);
+    selVuelta = new Date(a, m-1, d);
+  } else {
+    selVuelta = null;
+  }
+  calTitulo.textContent = tipoViaje === "solo-ida" ? "Elige tu fecha" : "Elige ida y vuelta";
+  actualizarResumen();
+  pintarCalendarioRango();
+  overlay.classList.add("abierto");
+}
+
+function cerrarCalendario() {
+  overlay.classList.remove("abierto");
+}
+
+function confirmarCalendario() {
+  if (selIda) fechas.ida = aStr(selIda);
+  fechas.vuelta = (tipoViaje !== "solo-ida" && selVuelta) ? aStr(selVuelta) : null;
+  refrescarDisparador();
+  cerrarCalendario();
+}
+
+/* Eventos del calendario */
+disparador.addEventListener("click", abrirCalendario);
+document.getElementById("cal-cerrar").addEventListener("click", cerrarCalendario);
+overlay.addEventListener("click", (e) => { if (e.target === overlay) cerrarCalendario(); });
+calConfirmar.addEventListener("click", confirmarCalendario);
+calPrev.addEventListener("click", () => { mesVista.setMonth(mesVista.getMonth()-1); pintarCalendarioRango(); });
+calNext.addEventListener("click", () => { mesVista.setMonth(mesVista.getMonth()+1); pintarCalendarioRango(); });
+
+/* Solo ida / ida y vuelta */
+document.querySelectorAll(".tipo").forEach(boton => {
+  boton.addEventListener("click", () => {
+    document.querySelectorAll(".tipo").forEach(b => b.classList.remove("elegido"));
+    boton.classList.add("elegido");
+    tipoViaje = boton.dataset.tipo;
+    const soloIda = tipoViaje === "solo-ida";
+    disparador.classList.toggle("solo-ida", soloIda);
+    if (soloIda) { fechas.vuelta = null; selVuelta = null; refrescarDisparador(); }
   });
-})();
+});
+
+refrescarDisparador();
 
 /* ---------- Búsqueda ---------- */
 const estado = document.getElementById("estado");
