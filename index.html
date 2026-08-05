@@ -863,13 +863,14 @@ document.getElementById("buscar").addEventListener("click", async () => {
       return;
     }
 
-    /* Etiqueta de precio comparando con la media del mes (estilo Google Flights) */
+    /* Etiqueta de precio: destaca los baratos comparando con el más barato encontrado */
     function etiquetaPrecio(precio) {
-      if (!refPrecios) return "";
-      const { media } = refPrecios;
-      if (precio <= media * 0.85) return '<span class="tag-precio tag-bajo">Precio bajo</span>';
-      if (precio >= media * 1.15) return '<span class="tag-precio tag-alto">Precio alto</span>';
-      return '<span class="tag-precio tag-normal">Precio normal</span>';
+      if (!vuelos || vuelos.length < 2) return "";
+      const masBarato = Math.min(...vuelos.map(v => v.price));
+      /* Hasta 10% por encima del más barato = chollo. Hasta 30% = buen precio. Más = sin etiqueta (no penalizamos) */
+      if (precio <= masBarato * 1.10) return '<span class="tag-precio tag-bajo">🔥 ¡Chollo!</span>';
+      if (precio <= masBarato * 1.30) return '<span class="tag-precio tag-normal">Buen precio</span>';
+      return "";
     }
 
     /* Guardamos los vuelos y pintamos con el filtro activo */
