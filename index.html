@@ -30,6 +30,17 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Outfit:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="estilo.css?v=2">
+<style>
+  /* Resaltado temporal del campo de vuelta al elegir la ida */
+  @keyframes latido-vuelta {
+    0%,100% { box-shadow: 0 0 0 0 rgba(14,154,167,0); }
+    50%     { box-shadow: 0 0 0 4px rgba(14,154,167,.35); }
+  }
+  #fecha-vuelta.resaltar-vuelta {
+    animation: latido-vuelta 1s ease-in-out 2;
+    border-color: #0E9AA7 !important;
+  }
+</style>
 </head>
 <body>
 
@@ -353,16 +364,12 @@ let tipoViaje = "ida-vuelta";
     inVuelta.min = inIda.value || hoy;
     if (inVuelta.value && inVuelta.value < inIda.value) inVuelta.value = inIda.value;
 
-    /* Al elegir la ida, abrir el calendario de vuelta (si es ida y vuelta).
-       Con un pequeño retardo para que el selector de ida se cierre del todo
-       antes de abrir el de vuelta y no se atropellen. */
-    if (inIda.value && tipoViaje !== "solo-ida") {
-      setTimeout(() => {
-        inVuelta.focus();
-        if (typeof inVuelta.showPicker === "function") {
-          try { inVuelta.showPicker(); } catch (e) { /* algunos navegadores lo bloquean */ }
-        }
-      }, 250);
+    /* Al elegir la ida, resaltar el campo de vuelta para que el usuario lo vea
+       (NO abrimos el calendario solo: en móvil showPicker atropella la selección
+       y mete una fecha por defecto). El usuario da un toque para abrirlo. */
+    if (inIda.value && tipoViaje !== "solo-ida" && !inVuelta.value) {
+      inVuelta.classList.add("resaltar-vuelta");
+      setTimeout(() => inVuelta.classList.remove("resaltar-vuelta"), 2500);
     }
   });
 
