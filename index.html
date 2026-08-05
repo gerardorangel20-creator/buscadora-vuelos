@@ -353,12 +353,16 @@ let tipoViaje = "ida-vuelta";
     inVuelta.min = inIda.value || hoy;
     if (inVuelta.value && inVuelta.value < inIda.value) inVuelta.value = inIda.value;
 
-    /* Al elegir la ida, abrir automáticamente el calendario de vuelta (si es ida y vuelta) */
+    /* Al elegir la ida, abrir el calendario de vuelta (si es ida y vuelta).
+       Con un pequeño retardo para que el selector de ida se cierre del todo
+       antes de abrir el de vuelta y no se atropellen. */
     if (inIda.value && tipoViaje !== "solo-ida") {
-      inVuelta.focus();
-      if (typeof inVuelta.showPicker === "function") {
-        try { inVuelta.showPicker(); } catch (e) { /* algunos navegadores lo bloquean */ }
-      }
+      setTimeout(() => {
+        inVuelta.focus();
+        if (typeof inVuelta.showPicker === "function") {
+          try { inVuelta.showPicker(); } catch (e) { /* algunos navegadores lo bloquean */ }
+        }
+      }, 250);
     }
   });
 
